@@ -16,6 +16,8 @@
         if(!core)throw new Error('API BestSectionCore não carregada');
         if(!win.XLSX)throw new Error('Biblioteca Excel local não carregada');
         if(doc.querySelector('.brand-name').textContent.replace(/\s/g,'')!=='BestSection')throw new Error('Marca BestSection inválida');
+        const resultArea=doc.querySelector('.result-area');if(resultArea.children.length!==1||resultArea.firstElementChild.id!=='resultContent')throw new Error('O estado vazio ainda ocupa a área de resultados');
+        if(new RegExp(['reta','lho'].join(''),'i').test(doc.body.textContent))throw new Error('A interface ainda contém o termo removido');
         if(core.numberFrom('1.250,5')!==1250.5)throw new Error('Conversão numérica inválida');
 
         const exact=await core.optimizeGuillotine({...baseConfig,sheets:[{id:'s1',name:'Chapa exata',length:203,width:100,quantity:1,priority:false}],pieces:[{id:'A',length:100,width:100,quantity:2,colorIndex:0}]},()=>{},24);
@@ -29,8 +31,8 @@
         if(!rotated.sheets[0].placements[0].rotated)throw new Error('Rotação necessária não foi aplicada');
         let rotationBlocked=false;try{await core.optimizeGuillotine({...baseConfig,allowRotation:false,sheets:[{id:'s1',name:'Estreita',length:100,width:200,quantity:1,priority:false}],pieces:[{id:'R',length:180,width:90,quantity:1,colorIndex:0}]},()=>{},8);}catch(error){rotationBlocked=/insuficiente|encaixe/.test(error.message);}if(!rotationBlocked)throw new Error('Bloqueio de rotação não foi respeitado');
 
-        const priority=await core.optimizeGuillotine({...baseConfig,sheets:[{id:'retalho',name:'Retalho',length:250,width:100,quantity:1,priority:true},{id:'comercial',name:'Comercial',length:203,width:100,quantity:1,priority:false}],pieces:[{id:'P',length:100,width:100,quantity:2,colorIndex:0}]},()=>{},20);
-        if(priority.totalSheets!==1||priority.sheets[0].stockType.id!=='retalho')throw new Error('Chapa prioritária não foi consumida primeiro');
+        const priority=await core.optimizeGuillotine({...baseConfig,sheets:[{id:'prioritaria',name:'Chapa prioritária',length:250,width:100,quantity:1,priority:true},{id:'padrao',name:'Chapa padrão',length:203,width:100,quantity:1,priority:false}],pieces:[{id:'P',length:100,width:100,quantity:2,colorIndex:0}]},()=>{},20);
+        if(priority.totalSheets!==1||priority.sheets[0].stockType.id!=='prioritaria')throw new Error('Chapa prioritária não foi consumida primeiro');
         const trimmed=await core.optimizeGuillotine({...baseConfig,kerf:0,edgeTrim:10,sheets:[{id:'t',name:'Com margem',length:120,width:120,quantity:1,priority:false}],pieces:[{id:'M',length:100,width:100,quantity:1,colorIndex:0}]},()=>{},8);
         const placed=trimmed.sheets[0].placements[0];if(placed.x!==10||placed.y!==10||trimmed.trimLoss!==4400)throw new Error('Margem das bordas incorreta');
         const stress=await core.optimizeGuillotine({...baseConfig,allowRotation:true,sheets:[{id:'std',name:'Padrão',length:2750,width:1850,quantity:6,priority:false}],pieces:[{id:'A',length:600,width:400,quantity:20,colorIndex:0},{id:'B',length:800,width:300,quantity:15,colorIndex:1},{id:'C',length:450,width:350,quantity:20,colorIndex:2},{id:'D',length:300,width:300,quantity:30,colorIndex:3}]},()=>{},24);

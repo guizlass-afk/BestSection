@@ -7,8 +7,8 @@ Todo o processamento, inclusive leitura e geração das planilhas, ocorre no nav
 ## Recursos
 
 - peças retangulares com identificação, comprimento, largura e quantidade;
-- estoque misto com várias medidas e quantidades de chapas ou retalhos;
-- opção de priorizar retalhos antes das chapas de prateleira;
+- estoque misto com várias medidas e quantidades de chapas;
+- opção de priorizar tamanhos específicos de chapa;
 - largura da serra (*kerf*) e margem nas bordas configuráveis;
 - rotação de 90° opcional para respeitar veio, estampa ou acabamento;
 - algoritmo multi-início com diferentes ordenações, escolhas de estoque e divisões guilhotinadas;
@@ -20,7 +20,7 @@ Todo o processamento, inclusive leitura e geração das planilhas, ocorre no nav
 ## Como usar
 
 1. Cadastre o nome do projeto, material e espessura.
-2. Informe todas as chapas e retalhos disponíveis. Marque **Priorizar** quando quiser consumir primeiro um retalho.
+2. Informe todos os tamanhos de chapa disponíveis. Marque **Priorizar** quando quiser consumir primeiro um tamanho específico.
 3. Informe a largura consumida pela serra e, se necessário, a margem a remover das bordas.
 4. Cadastre as peças em comprimento × largura × quantidade.
 5. Defina se as peças podem girar 90°.

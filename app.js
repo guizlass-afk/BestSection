@@ -8,7 +8,7 @@
     partsBody:$('partsBody'), addPartButton:$('addPartButton'), optimizeButton:$('optimizeButton'), message:$('message'),
     progressPanel:$('progressPanel'), progressLabel:$('progressLabel'), progressPercent:$('progressPercent'), progressTrack:$('progressTrack'), progressBar:$('progressBar'), progressDetail:$('progressDetail'),
     templateButton:$('templateButton'), saveProjectButton:$('saveProjectButton'), excelInput:$('excelInput'),
-    emptyState:$('emptyState'), resultContent:$('resultContent'), resultSubtitle:$('resultSubtitle'),
+    resultContent:$('resultContent'), resultSubtitle:$('resultSubtitle'),
     metricSheets:$('metricSheets'), metricUsage:$('metricUsage'), metricPieces:$('metricPieces'), metricWaste:$('metricWaste'),
     materialBadge:$('materialBadge'), sheetLayouts:$('sheetLayouts'), cutsTableBody:$('cutsTableBody'), piecesTableBody:$('piecesTableBody'),
     printButton:$('printButton'), exportButton:$('exportButton')
@@ -32,7 +32,7 @@
   function setMessage(text,type='') { ui.message.textContent=text; ui.message.className=`message ${type}`.trim(); }
   function invalidateResult() {
     if (!state.result) return;
-    state.result=null; ui.resultContent.hidden=true; ui.emptyState.hidden=false; ui.printButton.disabled=ui.exportButton.disabled=true;
+    state.result=null; ui.resultContent.hidden=true; ui.printButton.disabled=ui.exportButton.disabled=true;
     ui.resultSubtitle.textContent='Dados alterados — gere novamente o plano de seccionamento';
   }
   function updateRemoveButtons(selector) {
@@ -225,7 +225,7 @@
     item.append(heading,svg,legend);return item;
   }
   function renderResult(result) {
-    state.result=result;ui.emptyState.hidden=true;ui.resultContent.hidden=false;ui.printButton.disabled=ui.exportButton.disabled=false;
+    state.result=result;ui.resultContent.hidden=false;ui.printButton.disabled=ui.exportButton.disabled=false;
     ui.metricSheets.textContent=result.totalSheets;ui.metricUsage.textContent=`${formatNumber(result.utilization,1)}%`;ui.metricPieces.textContent=result.totalPieces;ui.metricWaste.textContent=`${formatNumber(result.remnantArea/1e6,3)} m²`;
     ui.materialBadge.textContent=`${result.config.material} · ${formatNumber(result.config.thickness)} mm`;ui.resultSubtitle.textContent=`${result.totalPieces} peça(s) em ${result.totalSheets} chapa(s) · ${formatNumber(result.kerfLoss/1e6,3)} m² consumidos pelos cortes`;
     ui.sheetLayouts.innerHTML='';result.sheets.forEach(sheet=>ui.sheetLayouts.appendChild(renderSheetLayout(sheet,result)));
@@ -244,7 +244,7 @@
   function workbookAvailable(){if(window.XLSX)return true;setMessage('O módulo de Excel não foi carregado. Recarregue a página e tente novamente.','error');return false;}
   function projectWorkbook(sheetRows,partRows,settingsRows) {
     const sheets=XLSX.utils.aoa_to_sheet([['Identificacao','Comprimento_mm','Largura_mm','Quantidade','Priorizar'],...sheetRows]),parts=XLSX.utils.aoa_to_sheet([['Identificacao','Comprimento_mm','Largura_mm','Quantidade','Observacao'],...partRows]),settings=XLSX.utils.aoa_to_sheet([['Configuracao','Valor'],...settingsRows]),instructions=XLSX.utils.aoa_to_sheet([
-      ['BESTSECTION — ARQUIVO COMPLETO DO PROJETO'],['Preencha as abas Chapas e Pecas sem alterar os nomes das colunas.'],['Chapas','Cadastre chapas inteiras e retalhos. Use Sim em Priorizar para consumir esse estoque primeiro.'],['Pecas','Informe identificação, comprimento, largura e quantidade. Observacao é opcional.'],['Configuracoes','Nome_projeto, Material, Espessura_material_mm, Largura_corte_mm, Margem_bordas_mm e Permitir_rotacao_90.'],['Importante','Todas as medidas são em milímetros. A otimização gera somente cortes guilhotinados.']
+      ['BESTSECTION — ARQUIVO COMPLETO DO PROJETO'],['Preencha as abas Chapas e Pecas sem alterar os nomes das colunas.'],['Chapas','Cadastre cada tamanho de chapa disponível. Use Sim em Priorizar para consumir esse tamanho primeiro.'],['Pecas','Informe identificação, comprimento, largura e quantidade. Observacao é opcional.'],['Configuracoes','Nome_projeto, Material, Espessura_material_mm, Largura_corte_mm, Margem_bordas_mm e Permitir_rotacao_90.'],['Importante','Todas as medidas são em milímetros. A otimização gera somente cortes guilhotinados.']
     ]);
     sheets['!cols']=[{wch:22},{wch:20},{wch:17},{wch:13},{wch:13}];parts['!cols']=[{wch:22},{wch:20},{wch:17},{wch:13},{wch:40}];settings['!cols']=[{wch:30},{wch:34}];instructions['!cols']=[{wch:32},{wch:110}];sheets['!autofilter']={ref:sheets['!ref']};parts['!autofilter']={ref:parts['!ref']};
     const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,sheets,'Chapas');XLSX.utils.book_append_sheet(workbook,parts,'Pecas');XLSX.utils.book_append_sheet(workbook,settings,'Configuracoes');XLSX.utils.book_append_sheet(workbook,instructions,'Instrucoes');return workbook;
@@ -253,7 +253,7 @@
     const sheets=[...ui.sheetBody.querySelectorAll('.sheet-row')].map(row=>[row.querySelector('.sheet-name').value,row.querySelector('.sheet-length').value,row.querySelector('.sheet-width').value,row.querySelector('.sheet-quantity').value,row.querySelector('.sheet-priority').checked?'Sim':'Não']);
     const parts=[...ui.partsBody.querySelectorAll('.part-row')].map(row=>[row.querySelector('.part-id').value,row.querySelector('.part-length').value,row.querySelector('.part-width').value,row.querySelector('.part-quantity').value,row.dataset.observation||'']);return{sheets,parts};
   }
-  function downloadTemplate(){if(!workbookAvailable())return;const workbook=projectWorkbook([['Chapa inteira',2750,1850,2,'Não'],['Retalho',1200,800,1,'Sim']],[['P01',600,400,4,'Exemplo — substitua'],['P02',800,300,2,'']],[['Versao_modelo',1],['Nome_projeto','Novo plano de corte'],['Material','MDF'],['Espessura_material_mm',15],['Largura_corte_mm',3],['Margem_bordas_mm',0],['Permitir_rotacao_90','Sim'],['Unidade','mm']]);XLSX.writeFile(workbook,'modelo_completo_bestsection.xlsx');setMessage('Modelo completo baixado.','success');}
+  function downloadTemplate(){if(!workbookAvailable())return;const workbook=projectWorkbook([['Chapa 1',2750,1850,2,'Não'],['Chapa 2',1200,800,1,'Sim']],[['P01',600,400,4,'Exemplo — substitua'],['P02',800,300,2,'']],[['Versao_modelo',1],['Nome_projeto','Novo plano de corte'],['Material','MDF'],['Espessura_material_mm',15],['Largura_corte_mm',3],['Margem_bordas_mm',0],['Permitir_rotacao_90','Sim'],['Unidade','mm']]);XLSX.writeFile(workbook,'modelo_completo_bestsection.xlsx');setMessage('Modelo completo baixado.','success');}
   function saveProject(){if(!workbookAvailable())return;const rows=formRows(),workbook=projectWorkbook(rows.sheets,rows.parts,[['Versao_modelo',1],['Nome_projeto',ui.projectName.value],['Material',ui.material.value],['Espessura_material_mm',ui.materialThickness.value],['Largura_corte_mm',ui.kerf.value],['Margem_bordas_mm',ui.edgeTrim.value],['Permitir_rotacao_90',ui.allowRotation.checked?'Sim':'Não'],['Unidade','mm'],['Salvo_em',new Date().toLocaleString('pt-BR')]]);XLSX.writeFile(workbook,`${safeFileName(ui.projectName.value)}_projeto_bestsection.xlsx`);setMessage('Projeto preenchido salvo. Importe este arquivo para continuar depois.','success');}
   function findHeader(headers,aliases){return headers.find(header=>aliases.includes(normalizeHeader(header)));}
   async function importExcel(file) {

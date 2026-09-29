@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="BestSection — otimizador de cortes guilhotinados para chapas, painéis e retalhos.">
+  <meta name="description" content="BestSection — otimizador de cortes guilhotinados para chapas e painéis.">
   <title>BestSection — Otimizador de seccionamento</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -38,16 +38,16 @@
       </section>
 
       <section class="panel">
-        <div class="section-heading"><span>2</span><div><h2>Chapas disponíveis</h2><p>Cadastre chapas inteiras e retalhos</p></div></div>
+        <div class="section-heading"><span>2</span><div><h2>Tamanho das chapas disponíveis</h2><p>Cadastre dimensões e quantidades</p></div></div>
         <div class="stock-heading"><strong>Lista de chapas</strong><small>Medidas em milímetros</small></div>
         <div class="sheet-columns"><span>Identificação</span><span>Comp.</span><span>Larg.</span><span>Qtd.</span><span>Prior.</span><span></span></div>
         <div id="sheetBody" class="sheet-list"></div>
-        <button id="addSheetButton" class="add-row-button" type="button"><span>+</span><b>Adicionar chapa ou retalho</b></button>
+        <button id="addSheetButton" class="add-row-button" type="button"><span>+</span><b>Adicionar tamanho de chapa</b></button>
         <div class="field-grid two machine-fields">
           <label class="field"><span>Largura do corte (mm)</span><input id="kerf" type="number" value="3" min="0" step="0.1"></label>
           <label class="field"><span>Margem nas bordas (mm)</span><input id="edgeTrim" type="number" value="0" min="0" step="0.1"></label>
         </div>
-        <p class="field-help">Marque <strong>Priorizar</strong> para consumir um retalho antes das demais chapas. A margem reduz igualmente os quatro lados.</p>
+        <p class="field-help">Marque <strong>Priorizar</strong> para consumir esse tamanho antes das demais chapas. A margem reduz igualmente os quatro lados.</p>
       </section>
 
       <section class="panel parts-panel">
@@ -76,12 +76,6 @@
       </div>
 
       <section class="result-area">
-        <div id="emptyState" class="empty-state">
-          <span class="empty-drawing" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-          <h2>Seu plano de corte aparecerá aqui</h2>
-          <p>Cadastre as chapas e peças, informe a largura da serra<br>e clique em “Otimizar seccionamento”.</p>
-        </div>
-
         <div id="resultContent" hidden>
           <div class="metrics">
             <article><span class="metric-icon sheets">▦</span><div><small>Chapas utilizadas</small><strong id="metricSheets">—</strong></div></article>
