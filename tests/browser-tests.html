@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Testes BestSection</title></head>
+<body>
+  <h1 id="status">EXECUTANDO</h1>
+  <pre id="details"></pre>
+  <iframe id="app" src="../index.html" style="position:absolute;width:420px;height:900px;opacity:0;pointer-events:none"></iframe>
+  <script>
+    const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    const baseConfig={projectName:'Teste',material:'MDF',thickness:15,allowRotation:false,kerf:3,edgeTrim:0};
+    function overlaps(a,b){return a.x<b.x+b.w-1e-7&&a.x+a.w>b.x+1e-7&&a.y<b.y+b.h-1e-7&&a.y+a.h>b.y+1e-7;}
+    document.getElementById('app').addEventListener('load',async()=>{
+      const log=[];
+      try{
+        const frame=document.getElementById('app'),win=frame.contentWindow,doc=frame.contentDocument,core=win.BestSectionCore;
+        if(!core)throw new Error('API BestSectionCore não carregada');
+        if(!win.XLSX)throw new Error('Biblioteca Excel local não carregada');
+        if(doc.querySelector('.brand-name').textContent.replace(/\s/g,'')!=='BestSection')throw new Error('Marca BestSection inválida');
+        if(core.numberFrom('1.250,5')!==1250.5)throw new Error('Conversão numérica inválida');
+
+        const exact=await core.optimizeGuillotine({...baseConfig,sheets:[{id:'s1',name:'Chapa exata',length:203,width:100,quantity:1,priority:false}],pieces:[{id:'A',length:100,width:100,quantity:2,colorIndex:0}]},()=>{},24);
+        if(exact.totalSheets!==1||exact.totalPieces!==2||exact.sheets[0].cuts.length!==1||Math.abs(exact.kerfLoss-300)>1e-7||exact.remnantArea!==0)throw new Error('Encaixe exato com kerf incorreto');
+        const placements=exact.sheets[0].placements;
+        if(overlaps(placements[0],placements[1]))throw new Error('Peças se sobrepõem');
+        exact.sheets[0].cuts.forEach(cut=>{if(cut.orientation==='vertical'&&Math.abs(cut.length-cut.region.h)>1e-7)throw new Error('Corte vertical não atravessa a região');if(cut.orientation==='horizontal'&&Math.abs(cut.length-cut.region.w)>1e-7)throw new Error('Corte horizontal não atravessa a região');});
+        log.push('Cortes guilhotinados: OK','Kerf e encaixe exato: OK','Ausência de sobreposição: OK');
+
+        const rotated=await core.optimizeGuillotine({...baseConfig,allowRotation:true,sheets:[{id:'s1',name:'Estreita',length:100,width:200,quantity:1,priority:false}],pieces:[{id:'R',length:180,width:90,quantity:1,colorIndex:0}]},()=>{},16);
+        if(!rotated.sheets[0].placements[0].rotated)throw new Error('Rotação necessária não foi aplicada');
+        let rotationBlocked=false;try{await core.optimizeGuillotine({...baseConfig,allowRotation:false,sheets:[{id:'s1',name:'Estreita',length:100,width:200,quantity:1,priority:false}],pieces:[{id:'R',length:180,width:90,quantity:1,colorIndex:0}]},()=>{},8);}catch(error){rotationBlocked=/insuficiente|encaixe/.test(error.message);}if(!rotationBlocked)throw new Error('Bloqueio de rotação não foi respeitado');
+
+        const priority=await core.optimizeGuillotine({...baseConfig,sheets:[{id:'retalho',name:'Retalho',length:250,width:100,quantity:1,priority:true},{id:'comercial',name:'Comercial',length:203,width:100,quantity:1,priority:false}],pieces:[{id:'P',length:100,width:100,quantity:2,colorIndex:0}]},()=>{},20);
+        if(priority.totalSheets!==1||priority.sheets[0].stockType.id!=='retalho')throw new Error('Chapa prioritária não foi consumida primeiro');
+        const trimmed=await core.optimizeGuillotine({...baseConfig,kerf:0,edgeTrim:10,sheets:[{id:'t',name:'Com margem',length:120,width:120,quantity:1,priority:false}],pieces:[{id:'M',length:100,width:100,quantity:1,colorIndex:0}]},()=>{},8);
+        const placed=trimmed.sheets[0].placements[0];if(placed.x!==10||placed.y!==10||trimmed.trimLoss!==4400)throw new Error('Margem das bordas incorreta');
+        const stress=await core.optimizeGuillotine({...baseConfig,allowRotation:true,sheets:[{id:'std',name:'Padrão',length:2750,width:1850,quantity:6,priority:false}],pieces:[{id:'A',length:600,width:400,quantity:20,colorIndex:0},{id:'B',length:800,width:300,quantity:15,colorIndex:1},{id:'C',length:450,width:350,quantity:20,colorIndex:2},{id:'D',length:300,width:300,quantity:30,colorIndex:3}]},()=>{},24);
+        if(stress.totalPieces!==85||stress.totalSheets>6)throw new Error('Lista de volume médio não foi atendida');
+        log.push('Rotação opcional: OK','Estoque prioritário: OK','Margem das bordas: OK','Projeto com 85 peças: OK');
+
+        const originalWriteFile=win.XLSX.writeFile;let downloaded=null,downloadedName='';win.XLSX.writeFile=(workbook,name)=>{downloaded=workbook;downloadedName=name;};
+        doc.getElementById('templateButton').click();
+        if(downloadedName!=='modelo_completo_bestsection.xlsx'||downloaded.SheetNames.join('|')!=='Chapas|Pecas|Configuracoes|Instrucoes')throw new Error('Modelo Excel inválido');
+        const headers=win.XLSX.utils.sheet_to_json(downloaded.Sheets.Chapas,{header:1})[0];if(!['Comprimento_mm','Largura_mm','Quantidade','Priorizar'].every(header=>headers.includes(header)))throw new Error('Modelo Excel incompleto');
+
+        const sheetBody=doc.getElementById('sheetBody'),partsBody=doc.getElementById('partsBody');if(sheetBody.children.length!==1||partsBody.children.length!==1)throw new Error('Linhas iniciais inválidas');
+        doc.getElementById('addSheetButton').click();if(sheetBody.children.length!==2)throw new Error('Adicionar chapa falhou');sheetBody.lastElementChild.querySelector('.remove-sheet').click();if(sheetBody.children.length!==1)throw new Error('Remover chapa falhou');
+        doc.getElementById('addPartButton').click();if(partsBody.children.length!==2)throw new Error('Adicionar peça falhou');partsBody.lastElementChild.querySelector('.remove-part').click();
+        const row=partsBody.firstElementChild;row.querySelector('.part-id').value='TESTE';row.querySelector('.part-length').value='600';row.querySelector('.part-width').value='400';row.querySelector('.part-quantity').value='4';
+        doc.getElementById('optimizeButton').click();for(let retry=0;retry<100&&doc.getElementById('resultContent').hidden;retry++)await wait(50);
+        if(doc.getElementById('resultContent').hidden||doc.getElementById('metricPieces').textContent!=='4'||!doc.querySelector('.sheet-svg')||!doc.querySelector('#cutsTableBody tr'))throw new Error('Fluxo visual não gerou o plano');
+        if(!doc.getElementById('progressPanel').hidden&&doc.getElementById('progressPercent').textContent!=='100%')throw new Error('Barra de progresso não concluiu');
+        win.XLSX.writeFile=originalWriteFile;
+        log.push('Interface e mapa SVG: OK','Modelo Excel completo: OK','Barra de progresso: OK','Biblioteca local: OK');
+        document.getElementById('status').textContent='PASS';
+      }catch(error){document.getElementById('status').textContent='FAIL';log.push(error.stack||error.message);}
+      document.getElementById('details').textContent=log.join('\n');
+    });
+  </script>
+</body>
+</html>
