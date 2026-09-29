@@ -13,97 +13,121 @@
       <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="brand-name"><strong>Best</strong><b>Section</b></span>
     </a>
-    <div class="top-status"><span></span>Processamento local e seguro</div>
+    <div class="topbar-actions">
+      <div class="top-status"><span></span><b data-i18n="localProcessing">Processamento local e seguro</b></div>
+      <div id="languagePicker" class="language-picker">
+        <button id="languageButton" class="language-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Idioma: Português">
+          <img id="currentFlag" src="flags/br.svg" alt=""><span id="currentLanguage">Português</span><i aria-hidden="true"></i>
+        </button>
+        <div id="languageMenu" class="language-menu" role="listbox" aria-label="Idioma" hidden>
+          <button type="button" role="option" data-language="pt-BR"><img src="flags/br.svg" alt="">Português</button>
+          <button type="button" role="option" data-language="en-US"><img src="flags/us.svg" alt="">English</button>
+          <button type="button" role="option" data-language="es-ES"><img src="flags/es.svg" alt="">Español</button>
+          <button type="button" role="option" data-language="zh-CN"><img src="flags/cn.svg" alt="">中文</button>
+          <button type="button" role="option" data-language="hi-IN"><img src="flags/in.svg" alt="">हिन्दी</button>
+          <button type="button" role="option" data-language="ar-SA"><img src="flags/sa.svg" alt="">العربية</button>
+          <button type="button" role="option" data-language="fr-FR"><img src="flags/fr.svg" alt="">Français</button>
+          <button type="button" role="option" data-language="bn-BD"><img src="flags/bd.svg" alt="">বাংলা</button>
+          <button type="button" role="option" data-language="ru-RU"><img src="flags/ru.svg" alt="">Русский</button>
+          <button type="button" role="option" data-language="de-DE"><img src="flags/de.svg" alt="">Deutsch</button>
+          <button type="button" role="option" data-language="it-IT"><img src="flags/it.svg" alt="">Italiano</button>
+          <button type="button" role="option" data-language="ja-JP"><img src="flags/jp.svg" alt="">日本語</button>
+        </div>
+        <select id="languageSelect" class="language-native-select" aria-label="Idioma" tabindex="-1">
+          <option value="pt-BR">Português</option><option value="en-US">English</option><option value="es-ES">Español</option><option value="zh-CN">中文</option><option value="hi-IN">हिन्दी</option><option value="ar-SA">العربية</option><option value="fr-FR">Français</option><option value="bn-BD">বাংলা</option><option value="ru-RU">Русский</option><option value="de-DE">Deutsch</option><option value="it-IT">Italiano</option><option value="ja-JP">日本語</option>
+        </select>
+      </div>
+    </div>
   </header>
 
   <main class="app-shell">
     <aside class="sidebar">
       <section class="panel project-file-panel">
-        <div class="project-file-heading"><h2>Arquivo do projeto</h2><p>Importe uma lista ou salve o estudo para continuar depois</p></div>
+        <div class="project-file-heading"><h2 data-i18n="projectFile">Arquivo do projeto</h2><p data-i18n="projectFileHelp">Importe uma lista ou salve o estudo para continuar depois</p></div>
         <div class="import-actions">
-          <button id="templateButton" class="ghost-button" type="button"><span aria-hidden="true">⇩</span><b>Baixar modelo</b></button>
-          <label class="ghost-button import-button"><span aria-hidden="true">⇧</span><b>Importar Excel</b><input id="excelInput" type="file" accept=".xlsx,.xls,.csv" hidden></label>
-          <button id="saveProjectButton" class="ghost-button save-project-button" type="button"><span aria-hidden="true">▣</span><b>Salvar projeto preenchido</b></button>
+          <button id="templateButton" class="ghost-button" type="button"><span aria-hidden="true">⇩</span><b data-i18n="downloadTemplate">Baixar modelo</b></button>
+          <label class="ghost-button import-button"><span aria-hidden="true">⇧</span><b data-i18n="importExcel">Importar Excel</b><input id="excelInput" type="file" accept=".xlsx,.xls,.csv" hidden></label>
+          <button id="saveProjectButton" class="ghost-button save-project-button" type="button"><span aria-hidden="true">▣</span><b data-i18n="saveProject">Salvar projeto preenchido</b></button>
         </div>
       </section>
 
       <section class="panel">
-        <div class="section-heading"><span>1</span><div><h2>Projeto e material</h2><p>Identificação e regras de orientação</p></div></div>
-        <label class="field full"><span>Nome do projeto</span><input id="projectName" value="Novo plano de corte" maxlength="80"></label>
+        <div class="section-heading"><span>1</span><div><h2 data-i18n="projectMaterial">Projeto e material</h2><p data-i18n="projectMaterialHelp">Identificação e regras de orientação</p></div></div>
+        <label class="field full"><span data-i18n="projectName">Nome do projeto</span><input id="projectName" value="Novo plano de corte" maxlength="80"></label>
         <div class="field-grid two">
-          <label class="field"><span>Material</span><input id="material" value="MDF" maxlength="50"></label>
-          <label class="field"><span>Espessura (mm)</span><input id="materialThickness" type="number" value="15" min="0.1" step="0.1"></label>
+          <label class="field"><span data-i18n="material">Material</span><input id="material" value="MDF" maxlength="50"></label>
+          <label class="field"><span data-i18n="thicknessMm">Espessura (mm)</span><input id="materialThickness" type="number" value="15" min="0.1" step="0.1"></label>
         </div>
-        <label class="check-field"><input id="allowRotation" type="checkbox" checked><span><strong>Permitir giro de 90°</strong><small>Desmarque para respeitar veio, estampa ou acabamento</small></span></label>
+        <label class="check-field"><input id="allowRotation" type="checkbox" checked><span><strong data-i18n="allowRotation">Permitir giro de 90°</strong><small data-i18n="allowRotationHelp">Desmarque para respeitar veio, estampa ou acabamento</small></span></label>
       </section>
 
       <section class="panel">
-        <div class="section-heading"><span>2</span><div><h2>Tamanho das chapas disponíveis</h2><p>Cadastre dimensões e quantidades</p></div></div>
-        <div class="stock-heading"><strong>Lista de chapas</strong><small>Medidas em milímetros</small></div>
-        <div class="sheet-columns"><span>Identificação</span><span>Comp.</span><span>Larg.</span><span>Qtd.</span><span>Prior.</span><span></span></div>
+        <div class="section-heading"><span>2</span><div><h2 data-i18n="availableSheetSizes">Tamanho das chapas disponíveis</h2><p data-i18n="availableSheetSizesHelp">Cadastre dimensões e quantidades</p></div></div>
+        <div class="stock-heading"><strong data-i18n="sheetList">Lista de chapas</strong><small data-i18n="measurementsMm">Medidas em milímetros</small></div>
+        <div class="sheet-columns"><span data-i18n="identification">Identificação</span><span data-i18n="lengthShort">Comp.</span><span data-i18n="widthShort">Larg.</span><span data-i18n="qtyShort">Qtd.</span><span data-i18n="priorityShort">Prior.</span><span></span></div>
         <div id="sheetBody" class="sheet-list"></div>
-        <button id="addSheetButton" class="add-row-button" type="button"><span>+</span><b>Adicionar tamanho de chapa</b></button>
+        <button id="addSheetButton" class="add-row-button" type="button"><span>+</span><b data-i18n="addSheetSize">Adicionar tamanho de chapa</b></button>
         <div class="field-grid two machine-fields">
-          <label class="field"><span>Largura do corte (mm)</span><input id="kerf" type="number" value="3" min="0" step="0.1"></label>
-          <label class="field"><span>Margem nas bordas (mm)</span><input id="edgeTrim" type="number" value="0" min="0" step="0.1"></label>
+          <label class="field"><span data-i18n="kerfWidth">Largura do corte (mm)</span><input id="kerf" type="number" value="3" min="0" step="0.1"></label>
+          <label class="field"><span data-i18n="edgeMargin">Margem nas bordas (mm)</span><input id="edgeTrim" type="number" value="0" min="0" step="0.1"></label>
         </div>
-        <p class="field-help">Marque <strong>Priorizar</strong> para consumir esse tamanho antes das demais chapas. A margem reduz igualmente os quatro lados.</p>
+        <p class="field-help" data-i18n-html="sheetHelp">Marque <strong>Priorizar</strong> para consumir esse tamanho antes das demais chapas. A margem reduz igualmente os quatro lados.</p>
       </section>
 
       <section class="panel parts-panel">
-        <div class="section-heading"><span>3</span><div><h2>Peças desejadas</h2><p>Comprimento × largura × quantidade</p></div></div>
-        <div class="part-columns"><span>Identificação</span><span>Comp.</span><span>Larg.</span><span>Qtd.</span><span></span></div>
+        <div class="section-heading"><span>3</span><div><h2 data-i18n="desiredParts">Peças desejadas</h2><p data-i18n="desiredPartsHelp">Comprimento × largura × quantidade</p></div></div>
+        <div class="part-columns"><span data-i18n="identification">Identificação</span><span data-i18n="lengthShort">Comp.</span><span data-i18n="widthShort">Larg.</span><span data-i18n="qtyShort">Qtd.</span><span></span></div>
         <div id="partsBody" class="parts-list"></div>
-        <button id="addPartButton" class="add-row-button" type="button"><span>+</span><b>Adicionar peça</b></button>
+        <button id="addPartButton" class="add-row-button" type="button"><span>+</span><b data-i18n="addPart">Adicionar peça</b></button>
       </section>
 
-      <button id="optimizeButton" class="primary-button" type="button"><span>Otimizar seccionamento</span><span>→</span></button>
+      <button id="optimizeButton" class="primary-button" type="button"><span data-i18n="optimize">Otimizar seccionamento</span><span>→</span></button>
       <section id="progressPanel" class="progress-panel" hidden aria-live="polite">
-        <div class="progress-heading"><strong id="progressLabel">Preparando otimização…</strong><span id="progressPercent">0%</span></div>
+        <div class="progress-heading"><strong id="progressLabel" data-i18n="preparing">Preparando otimização…</strong><span id="progressPercent">0%</span></div>
         <div id="progressTrack" class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressBar"></span></div>
-        <small id="progressDetail">Analisando peças e chapas disponíveis</small>
+        <small id="progressDetail" data-i18n="analyzing">Analisando peças e chapas disponíveis</small>
       </section>
       <div id="message" class="message" role="status" aria-live="polite"></div>
     </aside>
 
     <section class="workspace">
       <div class="workspace-toolbar">
-        <div><h1>Plano de seccionamento</h1><p id="resultSubtitle">Configure as chapas e adicione as peças</p></div>
+        <div><h1 data-i18n="cuttingPlan">Plano de seccionamento</h1><p id="resultSubtitle" data-i18n="configure">Configure as chapas e adicione as peças</p></div>
         <div class="toolbar-actions">
-          <button id="printButton" class="secondary-button" type="button" disabled>Imprimir</button>
-          <button id="exportButton" class="export-button" type="button" disabled>Exportar Excel</button>
+          <button id="printButton" class="secondary-button" type="button" disabled data-i18n="print">Imprimir</button>
+          <button id="exportButton" class="export-button" type="button" disabled data-i18n="exportExcel">Exportar Excel</button>
         </div>
       </div>
 
       <section class="result-area">
         <div id="resultContent" hidden>
           <div class="metrics">
-            <article><span class="metric-icon sheets">▦</span><div><small>Chapas utilizadas</small><strong id="metricSheets">—</strong></div></article>
-            <article><span class="metric-icon usage">◔</span><div><small>Aproveitamento</small><strong id="metricUsage">—</strong></div></article>
-            <article><span class="metric-icon pieces">◇</span><div><small>Peças</small><strong id="metricPieces">—</strong></div></article>
-            <article><span class="metric-icon waste">↘</span><div><small>Sobra reaproveitável</small><strong id="metricWaste">—</strong></div></article>
+            <article><span class="metric-icon sheets">▦</span><div><small data-i18n="sheetsUsed">Chapas utilizadas</small><strong id="metricSheets">—</strong></div></article>
+            <article><span class="metric-icon usage">◔</span><div><small data-i18n="utilization">Aproveitamento</small><strong id="metricUsage">—</strong></div></article>
+            <article><span class="metric-icon pieces">◇</span><div><small data-i18n="parts">Peças</small><strong id="metricPieces">—</strong></div></article>
+            <article><span class="metric-icon waste">↘</span><div><small data-i18n="reusableRemainder">Sobra reaproveitável</small><strong id="metricWaste">—</strong></div></article>
           </div>
 
           <section class="result-card layouts-card">
-            <div class="card-heading"><div><h2>Mapas das chapas</h2><p>Layout guilhotinado; os números indicam a ordem dos cortes</p></div><span id="materialBadge" class="material-badge"></span></div>
+            <div class="card-heading"><div><h2 data-i18n="sheetMaps">Mapas das chapas</h2><p data-i18n="sheetMapsHelp">Layout guilhotinado; os números indicam a ordem dos cortes</p></div><span id="materialBadge" class="material-badge"></span></div>
             <div id="sheetLayouts" class="sheet-layouts"></div>
           </section>
 
           <section class="result-card">
-            <div class="card-heading"><div><h2>Sequência de cortes</h2><p>Cada corte atravessa completamente o retângulo indicado</p></div></div>
+            <div class="card-heading"><div><h2 data-i18n="cutSequence">Sequência de cortes</h2><p data-i18n="cutSequenceHelp">Cada corte atravessa completamente o retângulo indicado</p></div></div>
             <div class="result-table-wrap">
               <table class="result-table cuts-table">
-                <thead><tr><th>Chapa</th><th>Ordem</th><th>Sentido</th><th>Posição</th><th>Extensão</th><th>Região antes do corte</th></tr></thead>
+                <thead><tr><th data-i18n="sheet">Chapa</th><th data-i18n="order">Ordem</th><th data-i18n="direction">Sentido</th><th data-i18n="position">Posição</th><th data-i18n="extent">Extensão</th><th data-i18n="regionBeforeCut">Região antes do corte</th></tr></thead>
                 <tbody id="cutsTableBody"></tbody>
               </table>
             </div>
           </section>
 
           <section class="result-card">
-            <div class="card-heading"><div><h2>Lista das peças</h2><p>Posições e orientação em cada chapa</p></div></div>
+            <div class="card-heading"><div><h2 data-i18n="partList">Lista das peças</h2><p data-i18n="partListHelp">Posições e orientação em cada chapa</p></div></div>
             <div class="result-table-wrap">
               <table class="result-table pieces-table">
-                <thead><tr><th>Chapa</th><th>Peça</th><th>Medida final</th><th>Posição X × Y</th><th>Orientação</th></tr></thead>
+                <thead><tr><th data-i18n="sheet">Chapa</th><th data-i18n="part">Peça</th><th data-i18n="finalSize">Medida final</th><th data-i18n="positionXY">Posição X × Y</th><th data-i18n="orientation">Orientação</th></tr></thead>
                 <tbody id="piecesTableBody"></tbody>
               </table>
             </div>
@@ -113,8 +137,9 @@
     </section>
   </main>
 
-  <footer><span>BestSection v1.0</span><span>Corte guilhotinado 2D · Seus dados não saem deste dispositivo</span><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licenças</a></footer>
+  <footer><span>BestSection v1.0</span><span data-i18n="footerPrivacy">Corte guilhotinado 2D · Seus dados não saem deste dispositivo</span><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener" data-i18n="licenses">Licenças</a></footer>
   <script src="vendor/xlsx.full.min.js"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

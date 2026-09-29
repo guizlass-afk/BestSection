@@ -18,6 +18,15 @@
         if(doc.querySelector('.brand-name').textContent.replace(/\s/g,'')!=='BestSection')throw new Error('Marca BestSection inválida');
         const resultArea=doc.querySelector('.result-area');if(resultArea.children.length!==1||resultArea.firstElementChild.id!=='resultContent')throw new Error('O estado vazio ainda ocupa a área de resultados');
         if(new RegExp(['reta','lho'].join(''),'i').test(doc.body.textContent))throw new Error('A interface ainda contém o termo removido');
+        const languageSelect=doc.getElementById('languageSelect'),languageOptions=[...doc.querySelectorAll('#languageMenu [data-language]')],currentFlag=doc.getElementById('currentFlag');
+        if(languageSelect.options.length!==12||languageOptions.length!==12)throw new Error('A lista de idiomas não contém 12 opções');
+        await wait(50);if(!currentFlag.complete||!currentFlag.naturalWidth||!currentFlag.src.endsWith('/flags/br.svg'))throw new Error('A bandeira do Brasil não carregou');
+        const languageChecks={'pt-BR':'Plano de seccionamento','en-US':'Cutting plan','es-ES':'Plan de corte','zh-CN':'切割方案','hi-IN':'कटिंग प्लान','ar-SA':'خطة القطع','fr-FR':'Plan de coupe','bn-BD':'কাটিং প্ল্যান','ru-RU':'Карта раскроя','de-DE':'Schnittplan','it-IT':'Piano di taglio','ja-JP':'切断プラン'};
+        for(const [language,expected] of Object.entries(languageChecks)){languageSelect.value=language;languageSelect.dispatchEvent(new win.Event('change'));if(doc.querySelector('[data-i18n="cuttingPlan"]').textContent!==expected)throw new Error(`Tradução inválida para ${language}`);}
+        if(!currentFlag.src.endsWith('/flags/jp.svg'))throw new Error('A bandeira não acompanha o idioma selecionado');
+        languageSelect.value='ar-SA';languageSelect.dispatchEvent(new win.Event('change'));if(doc.documentElement.dir!=='rtl')throw new Error('Direção RTL do árabe não aplicada');
+        languageSelect.value='pt-BR';languageSelect.dispatchEvent(new win.Event('change'));if(doc.documentElement.dir!=='ltr'||!currentFlag.src.endsWith('/flags/br.svg'))throw new Error('Retorno ao português inválido');
+        log.push('Idiomas e bandeiras: OK (12 opções)');
         if(core.numberFrom('1.250,5')!==1250.5)throw new Error('Conversão numérica inválida');
 
         const exact=await core.optimizeGuillotine({...baseConfig,sheets:[{id:'s1',name:'Chapa exata',length:203,width:100,quantity:1,priority:false}],pieces:[{id:'A',length:100,width:100,quantity:2,colorIndex:0}]},()=>{},24);
@@ -51,6 +60,8 @@
         doc.getElementById('optimizeButton').click();for(let retry=0;retry<100&&doc.getElementById('resultContent').hidden;retry++)await wait(50);
         if(doc.getElementById('resultContent').hidden||doc.getElementById('metricPieces').textContent!=='4'||!doc.querySelector('.sheet-svg')||!doc.querySelector('#cutsTableBody tr'))throw new Error('Fluxo visual não gerou o plano');
         if(!doc.getElementById('progressPanel').hidden&&doc.getElementById('progressPercent').textContent!=='100%')throw new Error('Barra de progresso não concluiu');
+        languageSelect.value='en-US';languageSelect.dispatchEvent(new win.Event('change'));if(doc.querySelector('[data-i18n="sheetMaps"]').textContent!=='Sheet maps'||!doc.querySelector('.layout-heading strong').textContent.includes('SHEET'))throw new Error('Resultado dinâmico não foi traduzido');
+        languageSelect.value='pt-BR';languageSelect.dispatchEvent(new win.Event('change'));
         win.XLSX.writeFile=originalWriteFile;
         log.push('Interface e mapa SVG: OK','Modelo Excel completo: OK','Barra de progresso: OK','Biblioteca local: OK');
         document.getElementById('status').textContent='PASS';

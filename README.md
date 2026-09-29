@@ -15,6 +15,7 @@ Todo o processamento, inclusive leitura e geração das planilhas, ocorre no nav
 - mapa visual por chapa, com peças e ordem dos cortes;
 - sequência de cortes executável e lista completa de posições;
 - modelo Excel, importação, salvamento do formulário e exportação do resultado;
+- interface em 12 idiomas, com bandeiras e suporte à leitura da direita para a esquerda em árabe;
 - impressão do plano e barra de progresso durante a otimização.
 
 ## Como usar
@@ -53,7 +54,9 @@ Em listas grandes e estoques mistos, trata-se de uma heurística: ela busca um p
 
 - `index.html`: interface;
 - `styles.css`: layout responsivo e visual de impressão;
+- `i18n.js`: traduções e metadados dos idiomas;
 - `app.js`: algoritmo, planilhas, visualização e exportação;
+- `flags/`: bandeiras exibidas no seletor de idioma;
 - `vendor/xlsx.full.min.js`: SheetJS Community Edition;
 - `tests/browser-tests.html`: testes locais do algoritmo e da interface.
 
