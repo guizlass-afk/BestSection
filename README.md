@@ -60,3 +60,12 @@ Em listas grandes e estoques mistos, trata-se de uma heurística: ela busca um p
 - `vendor/xlsx.full.min.js`: SheetJS Community Edition;
 - `tests/browser-tests.html`: testes locais do algoritmo e da interface.
 
+
+
+## Aparência
+
+O botão de sol/lua ao lado do idioma alterna os temas claro e escuro. A preferência fica salva em `factorytoolbox-theme`, compartilhada entre as ferramentas no mesmo domínio. Sem escolha salva, o tema acompanha a preferência do sistema. Alterar o tema mantém o projeto e os resultados atuais. A impressão e os arquivos exportados preservam as cores do desenho.
+
+## Licenciamento do código próprio
+
+O código original desta versão tem todos os direitos reservados, conforme `LICENSE`. Esta versão do código próprio não é distribuída sob a licença MIT. As licenças e os avisos de componentes de terceiros são preservados.
