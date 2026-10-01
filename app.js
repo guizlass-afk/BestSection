@@ -36,7 +36,8 @@
   function fromMM(value) { return convertUnit(value, 'mm', displayUnit); }
   function lengthDigits() { return displayUnit === 'in' ? 3 : 1; }
   function formatPlain(value) { if (!Number.isFinite(value)) return ''; const digits = displayUnit === 'in' ? 3 : 2; return String(Math.round(value * 10 ** digits) / 10 ** digits); }
-  function formatLength(mm, digits) { return `${formatNumber(fromMM(Number(mm)), digits ?? lengthDigits())} ${displayUnit}`; }
+  function formatLengthValue(mm, digits) { return formatNumber(fromMM(Number(mm)), digits ?? lengthDigits()); }
+  function formatLength(mm, digits) { return `${formatLengthValue(mm, digits)} ${displayUnit}`; }
   function t(key,values={}){const template=translations[state.language]?.[key]??translations['en-US']?.[key]??translations['pt-BR']?.[key]??key;return String(template).replace(/\{(\w+)\}/g,(_,name)=>values[name]??`{${name}}`);}
   function formatNumber(value,digits=1) { return Number(value).toLocaleString(state.language,{maximumFractionDigits:digits}); }
   function escapeHtml(value) { const div=document.createElement('div'); div.textContent=value; return div.innerHTML; }
@@ -230,12 +231,12 @@
   function svgElement(name,attributes={}) { const element=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attributes).forEach(([key,value])=>element.setAttribute(key,String(value)));return element; }
   function renderSheetLayout(sheet,result) {
     const item=document.createElement('article');item.className='layout-item';
-    const heading=document.createElement('div');heading.className='layout-heading';heading.innerHTML=`<strong>${escapeHtml(t('sheetUpper',{number:sheet.index}))} · ${escapeHtml(sheet.stockType.name)}</strong><span>${formatLength(sheet.length)} × ${formatLength(sheet.width)}<br>${escapeHtml(t('pieceCount',{count:sheet.placements.length}))} · ${escapeHtml(t('remainderMeasure',{area:formatNumber(sheet.free.reduce((sum,r)=>sum+r.w*r.h,0)/1e6,3)}))}</span>`;
+    const heading=document.createElement('div');heading.className='layout-heading';heading.innerHTML=`<strong>${escapeHtml(t('sheetUpper',{number:sheet.index}))} · ${escapeHtml(sheet.stockType.name)}</strong><span>${formatLengthValue(sheet.length)} × ${formatLengthValue(sheet.width)} ${displayUnit}<br>${escapeHtml(t('pieceCount',{count:sheet.placements.length}))} · ${escapeHtml(t('remainderMeasure',{area:formatNumber(sheet.free.reduce((sum,r)=>sum+r.w*r.h,0)/1e6,3)}))}</span>`;
     const svg=svgElement('svg',{class:'sheet-svg',viewBox:`0 0 ${sheet.length} ${sheet.width}`,role:'img','aria-label':t('sheetPlanAria',{number:sheet.index})});
     svg.appendChild(svgElement('rect',{x:0,y:0,width:sheet.length,height:sheet.width,fill:'#f5f8f9'}));
     if(result.config.edgeTrim>0){const m=result.config.edgeTrim;[[0,0,sheet.length,m],[0,sheet.width-m,sheet.length,m],[0,m,m,sheet.width-2*m],[sheet.length-m,m,m,sheet.width-2*m]].forEach(([x,y,w,h])=>svg.appendChild(svgElement('rect',{x,y,width:w,height:h,class:'trim-area'})));}
     sheet.placements.forEach(placement=>{
-      const group=svgElement('g'),rect=svgElement('rect',{x:placement.x,y:placement.y,width:placement.w,height:placement.h,fill:palette[placement.colorIndex%palette.length],class:'piece'}),title=svgElement('title');title.textContent=`${placement.id} · ${formatLength(placement.length)} × ${formatLength(placement.width)}${placement.rotated?` · ${t('rotated')}`:''}`;rect.appendChild(title);group.appendChild(rect);
+      const group=svgElement('g'),rect=svgElement('rect',{x:placement.x,y:placement.y,width:placement.w,height:placement.h,fill:palette[placement.colorIndex%palette.length],class:'piece'}),title=svgElement('title');title.textContent=`${placement.id} · ${formatLengthValue(placement.length)} × ${formatLengthValue(placement.width)} ${displayUnit}${placement.rotated?` · ${t('rotated')}`:''}`;rect.appendChild(title);group.appendChild(rect);
       if(Math.min(placement.w,placement.h)>35){const font=Math.max(16,Math.min(55,Math.min(placement.w,placement.h)*.16)),text=svgElement('text',{x:placement.x+placement.w/2,y:placement.y+placement.h/2,'font-size':font,class:'piece-label'});text.textContent=placement.id;group.appendChild(text);}svg.appendChild(group);
     });
     const radius=Math.max(9,Math.min(sheet.length,sheet.width)*.015);
@@ -243,7 +244,7 @@
       const x2=cut.orientation==='vertical'?cut.x:cut.x+cut.length,y2=cut.orientation==='vertical'?cut.y+cut.length:cut.y,line=svgElement('line',{x1:cut.x,y1:cut.y,x2,y2,class:'cut-line'});svg.appendChild(line);
       const cx=cut.orientation==='vertical'?cut.x:cut.x+cut.length/2,cy=cut.orientation==='vertical'?cut.y+cut.length/2:cut.y,circle=svgElement('circle',{cx,cy,r:radius,class:'cut-number'}),label=svgElement('text',{x:cx,y:cy,'font-size':radius*1.05,class:'cut-number-text'});label.textContent=cut.order;svg.append(circle,label);
     });
-    const legend=document.createElement('div');legend.className='layout-legend';const unique=new Map();sheet.placements.forEach(p=>{if(!unique.has(p.id))unique.set(p.id,p);});legend.innerHTML=[...unique.values()].map(p=>`<span><i style="background:${palette[p.colorIndex%palette.length]}"></i>${escapeHtml(p.id)} · ${formatLength(p.length)} × ${formatLength(p.width)}</span>`).join('');
+    const legend=document.createElement('div');legend.className='layout-legend';const unique=new Map();sheet.placements.forEach(p=>{if(!unique.has(p.id))unique.set(p.id,p);});legend.innerHTML=[...unique.values()].map(p=>`<span><i style="background:${palette[p.colorIndex%palette.length]}"></i>${escapeHtml(p.id)} · ${formatLengthValue(p.length)} × ${formatLengthValue(p.width)} ${displayUnit}</span>`).join('');
     item.append(heading,svg,legend);return item;
   }
   function renderResult(result) {
@@ -251,8 +252,8 @@
     ui.metricSheets.textContent=result.totalSheets;ui.metricUsage.textContent=`${formatNumber(result.utilization,1)}%`;ui.metricPieces.textContent=result.totalPieces;ui.metricWaste.textContent=`${formatNumber(result.remnantArea/1e6,3)} m²`;
     ui.materialBadge.textContent=`${result.config.material} · ${formatLength(result.config.thickness)}`;ui.resultSubtitle.textContent=t('resultSummary',{parts:result.totalPieces,sheets:result.totalSheets,loss:formatNumber(result.kerfLoss/1e6,3)});
     ui.sheetLayouts.innerHTML='';result.sheets.forEach(sheet=>ui.sheetLayouts.appendChild(renderSheetLayout(sheet,result)));
-    ui.cutsTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.cuts.forEach(cut=>{const row=document.createElement('tr'),axis=cut.orientation==='vertical'?'X':'Y',position=cut.orientation==='vertical'?cut.x:cut.y;row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong><br><small>${escapeHtml(sheet.stockType.name)}</small></td><td><strong>${cut.order}</strong></td><td><span class="direction-chip">${escapeHtml(t(cut.orientation==='vertical'?'vertical':'horizontal'))}</span></td><td>${axis} = ${formatLength(position)}</td><td>${formatLength(cut.length)}</td><td>${formatLength(cut.region.w)} × ${formatLength(cut.region.h)}</td>`;ui.cutsTableBody.appendChild(row);}));
-    ui.piecesTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.placements.forEach(piece=>{const row=document.createElement('tr');row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong></td><td><span class="piece-code">${escapeHtml(piece.id)}</span></td><td>${formatLength(piece.length)} × ${formatLength(piece.width)}</td><td>${formatLength(piece.x)} × ${formatLength(piece.y)}</td><td>${piece.rotated?'90°':'0°'}</td>`;ui.piecesTableBody.appendChild(row);}));
+    ui.cutsTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.cuts.forEach(cut=>{const row=document.createElement('tr'),axis=cut.orientation==='vertical'?'X':'Y',position=cut.orientation==='vertical'?cut.x:cut.y;row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong><br><small>${escapeHtml(sheet.stockType.name)}</small></td><td><strong>${cut.order}</strong></td><td><span class="direction-chip">${escapeHtml(t(cut.orientation==='vertical'?'vertical':'horizontal'))}</span></td><td>${axis} = ${formatLength(position)}</td><td>${formatLength(cut.length)}</td><td>${formatLengthValue(cut.region.w)} × ${formatLengthValue(cut.region.h)} ${displayUnit}</td>`;ui.cutsTableBody.appendChild(row);}));
+    ui.piecesTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.placements.forEach(piece=>{const row=document.createElement('tr');row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong></td><td><span class="piece-code">${escapeHtml(piece.id)}</span></td><td>${formatLengthValue(piece.length)} × ${formatLengthValue(piece.width)} ${displayUnit}</td><td>${formatLengthValue(piece.x)} × ${formatLengthValue(piece.y)} ${displayUnit}</td><td>${piece.rotated?'90°':'0°'}</td>`;ui.piecesTableBody.appendChild(row);}));
   }
   async function executeOptimization() {
     try {
@@ -315,5 +316,5 @@
   [ui.kerf,ui.edgeTrim,ui.materialThickness].forEach(input=>{input.value=formatPlain(fromMM(numberFrom(input.value)));});
 
   addSheetRow({name:t('sheetDefault',{number:1}),length:2750,width:1850,quantity:1});addPartRow({id:'P01',length:600,width:400,quantity:1});applyLanguage(state.language,false);
-  window.BestSectionCore=Object.freeze({optimizeGuillotine,runTrial,splitGeometry,numberFrom,expandPieces,applyLanguage,convertUnit,formatLength});
+  window.BestSectionCore=Object.freeze({optimizeGuillotine,runTrial,splitGeometry,numberFrom,expandPieces,applyLanguage,convertUnit,formatLength,formatLengthValue});
 })();
