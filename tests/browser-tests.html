@@ -63,7 +63,22 @@
         languageSelect.value='en-US';languageSelect.dispatchEvent(new win.Event('change'));if(doc.querySelector('[data-i18n="sheetMaps"]').textContent!=='Sheet maps'||!doc.querySelector('.layout-heading strong').textContent.includes('SHEET'))throw new Error('Resultado dinâmico não foi traduzido');
         languageSelect.value='pt-BR';languageSelect.dispatchEvent(new win.Event('change'));
         win.XLSX.writeFile=originalWriteFile;
-        log.push('Interface e mapa SVG: OK','Modelo Excel completo: OK','Barra de progresso: OK','Biblioteca local: OK');
+
+        if(doc.documentElement.dataset.unit!=='mm')throw new Error('Unidade padrão não é mm');
+        if(Math.abs(core.convertUnit(25.4,'mm','in')-1)>1e-9||Math.abs(core.convertUnit(1,'in','mm')-25.4)>1e-9)throw new Error('Conversão mm/in incorreta');
+        const unitToggle=doc.getElementById('unitToggle');if(!unitToggle)throw new Error('Alternador de unidade não encontrado');
+        const thicknessMm=Number(doc.getElementById('materialThickness').value),sheetLengthMm=Number(sheetBody.querySelector('.sheet-length').value),partLengthMm=Number(row.querySelector('.part-length').value);
+        unitToggle.click();
+        if(doc.documentElement.dataset.unit!=='in')throw new Error('Alternância para polegadas falhou');
+        if(win.localStorage.getItem('bestsection-unit')!=='in')throw new Error('Preferência de unidade não foi persistida');
+        if(Math.abs(Number(doc.getElementById('materialThickness').value)-thicknessMm/25.4)>0.01)throw new Error('Espessura do material não converteu para polegadas');
+        if(Math.abs(Number(sheetBody.querySelector('.sheet-length').value)-sheetLengthMm/25.4)>0.01)throw new Error('Comprimento da chapa não converteu para polegadas');
+        if(Math.abs(Number(row.querySelector('.part-length').value)-partLengthMm/25.4)>0.01)throw new Error('Comprimento da peça não converteu para polegadas');
+        unitToggle.click();
+        if(doc.documentElement.dataset.unit!=='mm'||win.localStorage.getItem('bestsection-unit')!=='mm')throw new Error('Alternância de volta para milímetros falhou');
+        if(Math.abs(Number(doc.getElementById('materialThickness').value)-thicknessMm)>0.05)throw new Error('Ida e volta mm→in→mm perdeu precisão da espessura');
+        if(Math.abs(Number(sheetBody.querySelector('.sheet-length').value)-sheetLengthMm)>0.05)throw new Error('Ida e volta mm→in→mm perdeu precisão do comprimento da chapa');
+        log.push('Interface e mapa SVG: OK','Modelo Excel completo: OK','Barra de progresso: OK','Biblioteca local: OK','Alternador métrico/imperial: OK');
         document.getElementById('status').textContent='PASS';
       }catch(error){document.getElementById('status').textContent='FAIL';log.push(error.stack||error.message);}
       document.getElementById('details').textContent=log.join('\n');

@@ -29,6 +29,14 @@
     else if (text.includes(',')) text = text.replace(',','.');
     return Number.parseFloat(text);
   }
+  function currentUnit() { return document.documentElement.dataset.unit === 'in' ? 'in' : 'mm'; }
+  let displayUnit = currentUnit();
+  function convertUnit(value, from, to) { if (!Number.isFinite(value) || from === to) return value; const mm = from === 'in' ? value * 25.4 : value; return to === 'in' ? mm / 25.4 : mm; }
+  function toMM(value) { return convertUnit(value, displayUnit, 'mm'); }
+  function fromMM(value) { return convertUnit(value, 'mm', displayUnit); }
+  function lengthDigits() { return displayUnit === 'in' ? 3 : 1; }
+  function formatPlain(value) { if (!Number.isFinite(value)) return ''; const digits = displayUnit === 'in' ? 3 : 2; return String(Math.round(value * 10 ** digits) / 10 ** digits); }
+  function formatLength(mm, digits) { return `${formatNumber(fromMM(Number(mm)), digits ?? lengthDigits())} ${displayUnit}`; }
   function t(key,values={}){const template=translations[state.language]?.[key]??translations['en-US']?.[key]??translations['pt-BR']?.[key]??key;return String(template).replace(/\{(\w+)\}/g,(_,name)=>values[name]??`{${name}}`);}
   function formatNumber(value,digits=1) { return Number(value).toLocaleString(state.language,{maximumFractionDigits:digits}); }
   function escapeHtml(value) { const div=document.createElement('div'); div.textContent=value; return div.innerHTML; }
@@ -54,26 +62,26 @@
   }
   function addSheetRow(values={},focus=false) {
     const row=document.createElement('div'); row.className='sheet-row'; row.dataset.rowId=values.rowId||`sheet-${state.nextSheetId++}`;
-    row.innerHTML=`<input class="row-input sheet-name" value="${escapeHtml(values.name??t('sheetDefault',{number:ui.sheetBody.children.length+1}))}" maxlength="40" aria-label="${escapeHtml(t('sheetNameAria'))}"><input class="row-input number-input sheet-length" type="number" value="${values.length??2750}" min="1" step="0.1" aria-label="${escapeHtml(t('sheetLengthAria'))}"><input class="row-input number-input sheet-width" type="number" value="${values.width??1850}" min="1" step="0.1" aria-label="${escapeHtml(t('sheetWidthAria'))}"><input class="row-input number-input sheet-quantity" type="number" value="${values.quantity??1}" min="1" max="999" step="1" aria-label="${escapeHtml(t('sheetQuantityAria'))}"><label class="priority-label" title="${escapeHtml(t('priorityTitle'))}"><input class="sheet-priority" type="checkbox"${values.priority?' checked':''} aria-label="${escapeHtml(t('priorityAria'))}"></label><button class="remove-row remove-sheet" type="button" title="${escapeHtml(t('removeSheet'))}" aria-label="${escapeHtml(t('removeSheet'))}">×</button>`;
+    row.innerHTML=`<input class="row-input sheet-name" value="${escapeHtml(values.name??t('sheetDefault',{number:ui.sheetBody.children.length+1}))}" maxlength="40" aria-label="${escapeHtml(t('sheetNameAria'))}"><input class="row-input number-input sheet-length" type="number" value="${formatPlain(fromMM(Number(values.length??2750)))}" min="1" step="0.1" aria-label="${escapeHtml(t('sheetLengthAria'))}"><input class="row-input number-input sheet-width" type="number" value="${formatPlain(fromMM(Number(values.width??1850)))}" min="1" step="0.1" aria-label="${escapeHtml(t('sheetWidthAria'))}"><input class="row-input number-input sheet-quantity" type="number" value="${values.quantity??1}" min="1" max="999" step="1" aria-label="${escapeHtml(t('sheetQuantityAria'))}"><label class="priority-label" title="${escapeHtml(t('priorityTitle'))}"><input class="sheet-priority" type="checkbox"${values.priority?' checked':''} aria-label="${escapeHtml(t('priorityAria'))}"></label><button class="remove-row remove-sheet" type="button" title="${escapeHtml(t('removeSheet'))}" aria-label="${escapeHtml(t('removeSheet'))}">×</button>`;
     row.querySelectorAll('input').forEach(input=>input.addEventListener('change',invalidateResult));
     row.querySelector('.remove-sheet').addEventListener('click',()=>{if(ui.sheetBody.children.length<=1)return;row.remove();updateRemoveButtons('.remove-sheet');invalidateResult();});
     ui.sheetBody.appendChild(row); updateRemoveButtons('.remove-sheet'); if(focus)row.querySelector('.sheet-name').focus(); return row;
   }
   function addPartRow(values={},focus=false) {
     const row=document.createElement('div'); row.className='part-row'; row.dataset.rowId=values.rowId||`part-${state.nextPartId++}`; row.dataset.observation=values.observation||'';
-    row.innerHTML=`<input class="row-input part-id" value="${escapeHtml(values.id??'')}" placeholder="Ex.: P01" maxlength="50" aria-label="${escapeHtml(t('partIdAria'))}"><input class="row-input number-input part-length" type="number" value="${values.length??''}" placeholder="0" min="0.1" step="0.1" aria-label="${escapeHtml(t('partLengthAria'))}"><input class="row-input number-input part-width" type="number" value="${values.width??''}" placeholder="0" min="0.1" step="0.1" aria-label="${escapeHtml(t('partWidthAria'))}"><input class="row-input number-input part-quantity" type="number" value="${values.quantity??1}" min="1" max="9999" step="1" aria-label="${escapeHtml(t('partQuantityAria'))}"><button class="remove-row remove-part" type="button" title="${escapeHtml(t('removePart'))}" aria-label="${escapeHtml(t('removePart'))}">×</button>`;
+    row.innerHTML=`<input class="row-input part-id" value="${escapeHtml(values.id??'')}" placeholder="Ex.: P01" maxlength="50" aria-label="${escapeHtml(t('partIdAria'))}"><input class="row-input number-input part-length" type="number" value="${values.length===undefined||values.length===''?'':formatPlain(fromMM(Number(values.length)))}" placeholder="0" min="0.1" step="0.1" aria-label="${escapeHtml(t('partLengthAria'))}"><input class="row-input number-input part-width" type="number" value="${values.width===undefined||values.width===''?'':formatPlain(fromMM(Number(values.width)))}" placeholder="0" min="0.1" step="0.1" aria-label="${escapeHtml(t('partWidthAria'))}"><input class="row-input number-input part-quantity" type="number" value="${values.quantity??1}" min="1" max="9999" step="1" aria-label="${escapeHtml(t('partQuantityAria'))}"><button class="remove-row remove-part" type="button" title="${escapeHtml(t('removePart'))}" aria-label="${escapeHtml(t('removePart'))}">×</button>`;
     row.querySelectorAll('input').forEach(input=>input.addEventListener('change',invalidateResult));
     row.querySelector('.remove-part').addEventListener('click',()=>{if(ui.partsBody.children.length<=1)return;row.remove();updateRemoveButtons('.remove-part');invalidateResult();});
     ui.partsBody.appendChild(row); updateRemoveButtons('.remove-part'); if(focus)row.querySelector('.part-id').focus(); return row;
   }
 
   function readForm() {
-    const kerf=numberFrom(ui.kerf.value), edgeTrim=numberFrom(ui.edgeTrim.value), thickness=numberFrom(ui.materialThickness.value);
+    const kerf=toMM(numberFrom(ui.kerf.value)), edgeTrim=toMM(numberFrom(ui.edgeTrim.value)), thickness=toMM(numberFrom(ui.materialThickness.value));
     if(!(kerf>=0))throw new Error(t('errorKerf'));
     if(!(edgeTrim>=0))throw new Error(t('errorEdge'));
     if(!(thickness>0))throw new Error(t('errorThickness'));
     const sheets=[...ui.sheetBody.querySelectorAll('.sheet-row')].map((row,index)=>{
-      const length=numberFrom(row.querySelector('.sheet-length').value),width=numberFrom(row.querySelector('.sheet-width').value),quantity=Math.trunc(numberFrom(row.querySelector('.sheet-quantity').value));
+      const length=toMM(numberFrom(row.querySelector('.sheet-length').value)),width=toMM(numberFrom(row.querySelector('.sheet-width').value)),quantity=Math.trunc(numberFrom(row.querySelector('.sheet-quantity').value));
       if(!(length>0&&width>0))throw new Error(t('errorSheetDimensions',{number:index+1}));
       if(!(quantity>=1&&quantity<=999))throw new Error(t('errorSheetQuantity',{number:index+1}));
       if(length-edgeTrim*2<=EPS||width-edgeTrim*2<=EPS)throw new Error(t('errorMarginEliminates',{number:index+1}));
@@ -83,7 +91,7 @@
     const pieces=[]; let totalPieces=0;
     [...ui.partsBody.querySelectorAll('.part-row')].forEach((row,index)=>{
       const rawLength=row.querySelector('.part-length').value.trim(),rawWidth=row.querySelector('.part-width').value.trim(); if(!rawLength&&!rawWidth)return;
-      const length=numberFrom(rawLength),width=numberFrom(rawWidth),quantity=Math.trunc(numberFrom(row.querySelector('.part-quantity').value));
+      const length=toMM(numberFrom(rawLength)),width=toMM(numberFrom(rawWidth)),quantity=Math.trunc(numberFrom(row.querySelector('.part-quantity').value));
       if(!(length>0&&width>0))throw new Error(t('errorPartDimensions',{number:index+1}));
       if(!(quantity>=1&&quantity<=9999))throw new Error(t('errorPartQuantity',{number:index+1}));
       pieces.push({id:row.querySelector('.part-id').value.trim()||`P${String(index+1).padStart(2,'0')}`,length,width,quantity,colorIndex:pieces.length,observation:row.dataset.observation||''}); totalPieces+=quantity;
@@ -222,12 +230,12 @@
   function svgElement(name,attributes={}) { const element=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attributes).forEach(([key,value])=>element.setAttribute(key,String(value)));return element; }
   function renderSheetLayout(sheet,result) {
     const item=document.createElement('article');item.className='layout-item';
-    const heading=document.createElement('div');heading.className='layout-heading';heading.innerHTML=`<strong>${escapeHtml(t('sheetUpper',{number:sheet.index}))} · ${escapeHtml(sheet.stockType.name)}</strong><span>${formatNumber(sheet.length)} × ${formatNumber(sheet.width)} mm<br>${escapeHtml(t('pieceCount',{count:sheet.placements.length}))} · ${escapeHtml(t('remainderMeasure',{area:formatNumber(sheet.free.reduce((sum,r)=>sum+r.w*r.h,0)/1e6,3)}))}</span>`;
+    const heading=document.createElement('div');heading.className='layout-heading';heading.innerHTML=`<strong>${escapeHtml(t('sheetUpper',{number:sheet.index}))} · ${escapeHtml(sheet.stockType.name)}</strong><span>${formatLength(sheet.length)} × ${formatLength(sheet.width)}<br>${escapeHtml(t('pieceCount',{count:sheet.placements.length}))} · ${escapeHtml(t('remainderMeasure',{area:formatNumber(sheet.free.reduce((sum,r)=>sum+r.w*r.h,0)/1e6,3)}))}</span>`;
     const svg=svgElement('svg',{class:'sheet-svg',viewBox:`0 0 ${sheet.length} ${sheet.width}`,role:'img','aria-label':t('sheetPlanAria',{number:sheet.index})});
     svg.appendChild(svgElement('rect',{x:0,y:0,width:sheet.length,height:sheet.width,fill:'#f5f8f9'}));
     if(result.config.edgeTrim>0){const m=result.config.edgeTrim;[[0,0,sheet.length,m],[0,sheet.width-m,sheet.length,m],[0,m,m,sheet.width-2*m],[sheet.length-m,m,m,sheet.width-2*m]].forEach(([x,y,w,h])=>svg.appendChild(svgElement('rect',{x,y,width:w,height:h,class:'trim-area'})));}
     sheet.placements.forEach(placement=>{
-      const group=svgElement('g'),rect=svgElement('rect',{x:placement.x,y:placement.y,width:placement.w,height:placement.h,fill:palette[placement.colorIndex%palette.length],class:'piece'}),title=svgElement('title');title.textContent=`${placement.id} · ${formatNumber(placement.length)} × ${formatNumber(placement.width)} mm${placement.rotated?` · ${t('rotated')}`:''}`;rect.appendChild(title);group.appendChild(rect);
+      const group=svgElement('g'),rect=svgElement('rect',{x:placement.x,y:placement.y,width:placement.w,height:placement.h,fill:palette[placement.colorIndex%palette.length],class:'piece'}),title=svgElement('title');title.textContent=`${placement.id} · ${formatLength(placement.length)} × ${formatLength(placement.width)}${placement.rotated?` · ${t('rotated')}`:''}`;rect.appendChild(title);group.appendChild(rect);
       if(Math.min(placement.w,placement.h)>35){const font=Math.max(16,Math.min(55,Math.min(placement.w,placement.h)*.16)),text=svgElement('text',{x:placement.x+placement.w/2,y:placement.y+placement.h/2,'font-size':font,class:'piece-label'});text.textContent=placement.id;group.appendChild(text);}svg.appendChild(group);
     });
     const radius=Math.max(9,Math.min(sheet.length,sheet.width)*.015);
@@ -235,16 +243,16 @@
       const x2=cut.orientation==='vertical'?cut.x:cut.x+cut.length,y2=cut.orientation==='vertical'?cut.y+cut.length:cut.y,line=svgElement('line',{x1:cut.x,y1:cut.y,x2,y2,class:'cut-line'});svg.appendChild(line);
       const cx=cut.orientation==='vertical'?cut.x:cut.x+cut.length/2,cy=cut.orientation==='vertical'?cut.y+cut.length/2:cut.y,circle=svgElement('circle',{cx,cy,r:radius,class:'cut-number'}),label=svgElement('text',{x:cx,y:cy,'font-size':radius*1.05,class:'cut-number-text'});label.textContent=cut.order;svg.append(circle,label);
     });
-    const legend=document.createElement('div');legend.className='layout-legend';const unique=new Map();sheet.placements.forEach(p=>{if(!unique.has(p.id))unique.set(p.id,p);});legend.innerHTML=[...unique.values()].map(p=>`<span><i style="background:${palette[p.colorIndex%palette.length]}"></i>${escapeHtml(p.id)} · ${formatNumber(p.length)} × ${formatNumber(p.width)}</span>`).join('');
+    const legend=document.createElement('div');legend.className='layout-legend';const unique=new Map();sheet.placements.forEach(p=>{if(!unique.has(p.id))unique.set(p.id,p);});legend.innerHTML=[...unique.values()].map(p=>`<span><i style="background:${palette[p.colorIndex%palette.length]}"></i>${escapeHtml(p.id)} · ${formatLength(p.length)} × ${formatLength(p.width)}</span>`).join('');
     item.append(heading,svg,legend);return item;
   }
   function renderResult(result) {
     state.result=result;ui.resultContent.hidden=false;ui.printButton.disabled=ui.exportButton.disabled=false;
     ui.metricSheets.textContent=result.totalSheets;ui.metricUsage.textContent=`${formatNumber(result.utilization,1)}%`;ui.metricPieces.textContent=result.totalPieces;ui.metricWaste.textContent=`${formatNumber(result.remnantArea/1e6,3)} m²`;
-    ui.materialBadge.textContent=`${result.config.material} · ${formatNumber(result.config.thickness)} mm`;ui.resultSubtitle.textContent=t('resultSummary',{parts:result.totalPieces,sheets:result.totalSheets,loss:formatNumber(result.kerfLoss/1e6,3)});
+    ui.materialBadge.textContent=`${result.config.material} · ${formatLength(result.config.thickness)}`;ui.resultSubtitle.textContent=t('resultSummary',{parts:result.totalPieces,sheets:result.totalSheets,loss:formatNumber(result.kerfLoss/1e6,3)});
     ui.sheetLayouts.innerHTML='';result.sheets.forEach(sheet=>ui.sheetLayouts.appendChild(renderSheetLayout(sheet,result)));
-    ui.cutsTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.cuts.forEach(cut=>{const row=document.createElement('tr'),axis=cut.orientation==='vertical'?'X':'Y',position=cut.orientation==='vertical'?cut.x:cut.y;row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong><br><small>${escapeHtml(sheet.stockType.name)}</small></td><td><strong>${cut.order}</strong></td><td><span class="direction-chip">${escapeHtml(t(cut.orientation==='vertical'?'vertical':'horizontal'))}</span></td><td>${axis} = ${formatNumber(position)} mm</td><td>${formatNumber(cut.length)} mm</td><td>${formatNumber(cut.region.w)} × ${formatNumber(cut.region.h)} mm</td>`;ui.cutsTableBody.appendChild(row);}));
-    ui.piecesTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.placements.forEach(piece=>{const row=document.createElement('tr');row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong></td><td><span class="piece-code">${escapeHtml(piece.id)}</span></td><td>${formatNumber(piece.length)} × ${formatNumber(piece.width)} mm</td><td>${formatNumber(piece.x)} × ${formatNumber(piece.y)} mm</td><td>${piece.rotated?'90°':'0°'}</td>`;ui.piecesTableBody.appendChild(row);}));
+    ui.cutsTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.cuts.forEach(cut=>{const row=document.createElement('tr'),axis=cut.orientation==='vertical'?'X':'Y',position=cut.orientation==='vertical'?cut.x:cut.y;row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong><br><small>${escapeHtml(sheet.stockType.name)}</small></td><td><strong>${cut.order}</strong></td><td><span class="direction-chip">${escapeHtml(t(cut.orientation==='vertical'?'vertical':'horizontal'))}</span></td><td>${axis} = ${formatLength(position)}</td><td>${formatLength(cut.length)}</td><td>${formatLength(cut.region.w)} × ${formatLength(cut.region.h)}</td>`;ui.cutsTableBody.appendChild(row);}));
+    ui.piecesTableBody.innerHTML='';result.sheets.forEach(sheet=>sheet.placements.forEach(piece=>{const row=document.createElement('tr');row.innerHTML=`<td><strong>${escapeHtml(t('sheetNumber',{number:sheet.index}))}</strong></td><td><span class="piece-code">${escapeHtml(piece.id)}</span></td><td>${formatLength(piece.length)} × ${formatLength(piece.width)}</td><td>${formatLength(piece.x)} × ${formatLength(piece.y)}</td><td>${piece.rotated?'90°':'0°'}</td>`;ui.piecesTableBody.appendChild(row);}));
   }
   async function executeOptimization() {
     try {
@@ -264,11 +272,11 @@
     const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,sheets,'Chapas');XLSX.utils.book_append_sheet(workbook,parts,'Pecas');XLSX.utils.book_append_sheet(workbook,settings,'Configuracoes');XLSX.utils.book_append_sheet(workbook,instructions,'Instrucoes');return workbook;
   }
   function formRows() {
-    const sheets=[...ui.sheetBody.querySelectorAll('.sheet-row')].map(row=>[row.querySelector('.sheet-name').value,row.querySelector('.sheet-length').value,row.querySelector('.sheet-width').value,row.querySelector('.sheet-quantity').value,row.querySelector('.sheet-priority').checked?'Sim':'Não']);
-    const parts=[...ui.partsBody.querySelectorAll('.part-row')].map(row=>[row.querySelector('.part-id').value,row.querySelector('.part-length').value,row.querySelector('.part-width').value,row.querySelector('.part-quantity').value,row.dataset.observation||'']);return{sheets,parts};
+    const sheets=[...ui.sheetBody.querySelectorAll('.sheet-row')].map(row=>[row.querySelector('.sheet-name').value,toMM(numberFrom(row.querySelector('.sheet-length').value)),toMM(numberFrom(row.querySelector('.sheet-width').value)),row.querySelector('.sheet-quantity').value,row.querySelector('.sheet-priority').checked?'Sim':'Não']);
+    const parts=[...ui.partsBody.querySelectorAll('.part-row')].map(row=>[row.querySelector('.part-id').value,toMM(numberFrom(row.querySelector('.part-length').value)),toMM(numberFrom(row.querySelector('.part-width').value)),row.querySelector('.part-quantity').value,row.dataset.observation||'']);return{sheets,parts};
   }
   function downloadTemplate(){if(!workbookAvailable())return;const workbook=projectWorkbook([['Chapa 1',2750,1850,2,'Não'],['Chapa 2',1200,800,1,'Sim']],[['P01',600,400,4,'Exemplo — substitua'],['P02',800,300,2,'']],[['Versao_modelo',1],['Nome_projeto','Novo plano de corte'],['Material','MDF'],['Espessura_material_mm',15],['Largura_corte_mm',3],['Margem_bordas_mm',0],['Permitir_rotacao_90','Sim'],['Unidade','mm']]);XLSX.writeFile(workbook,'modelo_completo_bestsection.xlsx');setMessage(t('templateDownloaded'),'success');}
-  function saveProject(){if(!workbookAvailable())return;const rows=formRows(),workbook=projectWorkbook(rows.sheets,rows.parts,[['Versao_modelo',1],['Nome_projeto',ui.projectName.value],['Material',ui.material.value],['Espessura_material_mm',ui.materialThickness.value],['Largura_corte_mm',ui.kerf.value],['Margem_bordas_mm',ui.edgeTrim.value],['Permitir_rotacao_90',ui.allowRotation.checked?'Sim':'Não'],['Unidade','mm'],['Salvo_em',new Date().toLocaleString(state.language)]]);XLSX.writeFile(workbook,`${safeFileName(ui.projectName.value)}_projeto_bestsection.xlsx`);setMessage(t('projectSaved'),'success');}
+  function saveProject(){if(!workbookAvailable())return;const rows=formRows(),workbook=projectWorkbook(rows.sheets,rows.parts,[['Versao_modelo',1],['Nome_projeto',ui.projectName.value],['Material',ui.material.value],['Espessura_material_mm',toMM(numberFrom(ui.materialThickness.value))],['Largura_corte_mm',toMM(numberFrom(ui.kerf.value))],['Margem_bordas_mm',toMM(numberFrom(ui.edgeTrim.value))],['Permitir_rotacao_90',ui.allowRotation.checked?'Sim':'Não'],['Unidade','mm'],['Salvo_em',new Date().toLocaleString(state.language)]]);XLSX.writeFile(workbook,`${safeFileName(ui.projectName.value)}_projeto_bestsection.xlsx`);setMessage(t('projectSaved'),'success');}
   function findHeader(headers,aliases){return headers.find(header=>aliases.includes(normalizeHeader(header)));}
   async function importExcel(file) {
     if(!workbookAvailable())return;
@@ -277,7 +285,7 @@
       if(!partName)throw new Error('A planilha deve conter a aba Pecas.');
       if(sheetName){const rows=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{defval:''});if(!rows.length)throw new Error('A aba Chapas está vazia.');const headers=Object.keys(rows[0]),id=findHeader(headers,['identificacao','id','nome','chapa']),length=findHeader(headers,['comprimentomm','comprimento','lengthmm','length']),width=findHeader(headers,['larguramm','largura','widthmm','width']),quantity=findHeader(headers,['quantidade','qtd','qtde','quantity','qty']),priority=findHeader(headers,['priorizar','prioridade','prioritario']);if(!length||!width||!quantity)throw new Error('A aba Chapas deve conter Comprimento_mm, Largura_mm e Quantidade.');ui.sheetBody.innerHTML='';rows.forEach((row,index)=>addSheetRow({name:String(id?row[id]:'').trim()||t('sheetDefault',{number:index+1}),length:row[length],width:row[width],quantity:row[quantity]||1,priority:booleanFrom(priority?row[priority]:'')}));}
       const rows=XLSX.utils.sheet_to_json(workbook.Sheets[partName],{defval:''});if(!rows.length)throw new Error('A aba Pecas está vazia.');const headers=Object.keys(rows[0]),id=findHeader(headers,['identificacao','id','codigo','peca','nome']),length=findHeader(headers,['comprimentomm','comprimento','lengthmm','length']),width=findHeader(headers,['larguramm','largura','widthmm','width']),quantity=findHeader(headers,['quantidade','qtd','qtde','quantity','qty']),observation=findHeader(headers,['observacao','obs','nota','notes']);if(!length||!width||!quantity)throw new Error('A aba Pecas deve conter Comprimento_mm, Largura_mm e Quantidade.');ui.partsBody.innerHTML='';rows.forEach((row,index)=>addPartRow({id:String(id?row[id]:'').trim()||`P${index+1}`,length:row[length],width:row[width],quantity:row[quantity]||1,observation:String(observation?row[observation]:'').trim()}));
-      const settingsName=workbook.SheetNames.find(name=>['configuracoes','configuracao','settings'].includes(normalizeHeader(name)));if(settingsName){const settings=XLSX.utils.sheet_to_json(workbook.Sheets[settingsName],{header:1,defval:''});settings.slice(1).forEach(row=>{const key=normalizeHeader(row[0]),value=row[1];if(key==='nomeprojeto'&&String(value).trim())ui.projectName.value=String(value).trim();if(key==='material'&&String(value).trim())ui.material.value=String(value).trim();if(key==='espessuramaterialmm')ui.materialThickness.value=value;if(['larguracortemm','kerfmm','kerf'].includes(key))ui.kerf.value=value;if(key==='margembordasmm')ui.edgeTrim.value=value;if(key==='permitirrotacao90')ui.allowRotation.checked=booleanFrom(value);});}
+      const settingsName=workbook.SheetNames.find(name=>['configuracoes','configuracao','settings'].includes(normalizeHeader(name)));if(settingsName){const settings=XLSX.utils.sheet_to_json(workbook.Sheets[settingsName],{header:1,defval:''});settings.slice(1).forEach(row=>{const key=normalizeHeader(row[0]),value=row[1];if(key==='nomeprojeto'&&String(value).trim())ui.projectName.value=String(value).trim();if(key==='material'&&String(value).trim())ui.material.value=String(value).trim();if(key==='espessuramaterialmm')ui.materialThickness.value=formatPlain(fromMM(numberFrom(value)));if(['larguracortemm','kerfmm','kerf'].includes(key))ui.kerf.value=formatPlain(fromMM(numberFrom(value)));if(key==='margembordasmm')ui.edgeTrim.value=formatPlain(fromMM(numberFrom(value)));if(key==='permitirrotacao90')ui.allowRotation.checked=booleanFrom(value);});}
       invalidateResult();setMessage(t('imported',{count:rows.length,file:file.name}),'success');
     }catch(error){setMessage(error.message,'error');}finally{ui.excelInput.value='';}
   }
@@ -291,6 +299,21 @@
   ui.languagePicker.addEventListener('keydown',event=>{if(event.key==='Escape'){setLanguageMenu(false);ui.languageButton.focus();return;}if(!['ArrowDown','ArrowUp'].includes(event.key))return;event.preventDefault();const buttons=[...ui.languageMenu.querySelectorAll('[data-language]')],current=Math.max(0,buttons.indexOf(document.activeElement)),next=event.key==='ArrowDown'?(current+1)%buttons.length:(current-1+buttons.length)%buttons.length;setLanguageMenu(true);buttons[next].focus();});
   document.addEventListener('click',event=>{if(!ui.languagePicker.contains(event.target))setLanguageMenu(false);});
   ui.optimizeButton.addEventListener('click',executeOptimization);ui.templateButton.addEventListener('click',downloadTemplate);ui.saveProjectButton.addEventListener('click',saveProject);ui.excelInput.addEventListener('change',event=>event.target.files[0]&&importExcel(event.target.files[0]));ui.printButton.addEventListener('click',()=>window.print());ui.exportButton.addEventListener('click',exportResult);
+
+  function convertDisplayedLengthInputs(prevUnit,nextUnit) {
+    if (prevUnit===nextUnit) return;
+    const convert=input=>{const v=numberFrom(input.value);if(Number.isFinite(v))input.value=formatPlain(convertUnit(v,prevUnit,nextUnit));};
+    convert(ui.kerf);convert(ui.edgeTrim);convert(ui.materialThickness);
+    ui.sheetBody.querySelectorAll('.sheet-length,.sheet-width').forEach(convert);
+    ui.partsBody.querySelectorAll('.part-length,.part-width').forEach(convert);
+  }
+  document.addEventListener('unitchange',event=>{
+    const next=event.detail.unit,prev=displayUnit; if(next===prev)return;
+    displayUnit=next; convertDisplayedLengthInputs(prev,next);
+    if(state.result)renderResult(state.result);
+  });
+  [ui.kerf,ui.edgeTrim,ui.materialThickness].forEach(input=>{input.value=formatPlain(fromMM(numberFrom(input.value)));});
+
   addSheetRow({name:t('sheetDefault',{number:1}),length:2750,width:1850,quantity:1});addPartRow({id:'P01',length:600,width:400,quantity:1});applyLanguage(state.language,false);
-  window.BestSectionCore=Object.freeze({optimizeGuillotine,runTrial,splitGeometry,numberFrom,expandPieces,applyLanguage});
+  window.BestSectionCore=Object.freeze({optimizeGuillotine,runTrial,splitGeometry,numberFrom,expandPieces,applyLanguage,convertUnit,formatLength});
 })();
