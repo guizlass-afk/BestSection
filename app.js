@@ -229,11 +229,51 @@
     const percent=Math.max(0,Math.min(100,Math.round(value*100))); ui.progressBar.style.width=`${percent}%`;ui.progressPercent.textContent=`${percent}%`;ui.progressTrack.setAttribute('aria-valuenow',String(percent));ui.progressLabel.textContent=t(percent>=100?'progressDone':'progressDoing');if(detail)ui.progressDetail.textContent=detail;
   }
   function svgElement(name,attributes={}) { const element=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attributes).forEach(([key,value])=>element.setAttribute(key,String(value)));return element; }
+  // Project actual piece spans onto the outside of the sheet, merging repeats.
+  // Separate overlapping spans into lanes so dimensions never cover the pieces.
+  function sheetDimensions(sheet) {
+    const font=Math.max(sheet.length,sheet.width)/75, gap=font*2.4;
+    function axis(start,size,total) {
+      const unique=new Map();
+      sheet.placements.forEach(piece=>{
+        const a=piece[start],b=a+piece[size];
+        if(a<1e-7&&Math.abs(b-total)<1e-7)return;
+        const key=`${a.toFixed(6)}:${b.toFixed(6)}`;
+        unique.set(key,{a,b});
+      });
+      const lanes=[];
+      const spans=[...unique.values()].sort((a,b)=>a.a-b.a||a.b-b.b);
+      spans.forEach(span=>{
+        const text=formatLengthValue(span.b-span.a),half=Math.max((span.b-span.a)/2,text.length*font*.32)+font*.5;
+        const center=(span.a+span.b)/2,lo=center-half,hi=center+half;
+        let lane=lanes.findIndex(end=>end<lo);
+        if(lane<0)lane=lanes.length;
+        lanes[lane]=hi;span.lane=lane;span.text=text;
+      });
+      return {spans,padding:lanes.length?gap*(lanes.length+1):font};
+    }
+    return {font,gap,x:axis('x','w',sheet.length),y:axis('y','h',sheet.width)};
+  }
+  function renderSheetDimensions(svg,dimensions) {
+    const {font,gap}=dimensions;
+    for(const [axis,data] of [['x',dimensions.x],['y',dimensions.y]]) {
+      data.spans.forEach(({a,b,lane,text})=>{
+        const offset=-gap*(lane+1),group=svgElement('g',{class:'sheet-dimension','data-axis':axis});
+        const line=(u1,v1,u2,v2)=>group.appendChild(svgElement('line',axis==='x'?{x1:u1,y1:v1,x2:u2,y2:v2}:{x1:v1,y1:u1,x2:v2,y2:u2}));
+        line(a,offset,b,offset);
+        for(const end of [a,b]){line(end,-font*.2,end,offset-font*.3);line(end-font*.2,offset+font*.2,end+font*.2,offset-font*.2);}
+        const center=(a+b)/2;
+        const label=svgElement('text',axis==='x'?{x:center,y:offset-font*.35,'font-size':font}:{transform:`translate(${offset-font*.35} ${center}) rotate(-90)`,'font-size':font});
+        label.textContent=text;group.appendChild(label);svg.appendChild(group);
+      });
+    }
+  }
   function renderSheetLayout(sheet,result) {
     const item=document.createElement('article');item.className='layout-item';
     const heading=document.createElement('div');heading.className='layout-heading';heading.innerHTML=`<strong>${escapeHtml(t('sheetUpper',{number:sheet.index}))} · ${escapeHtml(sheet.stockType.name)}</strong><span>${formatLengthValue(sheet.length)} × ${formatLengthValue(sheet.width)} ${displayUnit}<br>${escapeHtml(t('pieceCount',{count:sheet.placements.length}))} · ${escapeHtml(t('remainderMeasure',{area:formatNumber(sheet.free.reduce((sum,r)=>sum+r.w*r.h,0)/1e6,3)}))}</span>`;
-    const svg=svgElement('svg',{class:'sheet-svg',viewBox:`0 0 ${sheet.length} ${sheet.width}`,role:'img','aria-label':t('sheetPlanAria',{number:sheet.index})});
-    svg.appendChild(svgElement('rect',{x:0,y:0,width:sheet.length,height:sheet.width,fill:'#f5f8f9'}));
+    const dimensions=sheetDimensions(sheet),left=dimensions.y.padding,top=dimensions.x.padding,pad=dimensions.font;
+    const svg=svgElement('svg',{class:'sheet-svg',viewBox:`${-left} ${-top} ${sheet.length+left+pad} ${sheet.width+top+pad}`,role:'img','aria-label':t('sheetPlanAria',{number:sheet.index})});
+    svg.appendChild(svgElement('rect',{x:0,y:0,width:sheet.length,height:sheet.width,fill:'#f5f8f9',class:'sheet-outline'}));
     if(result.config.edgeTrim>0){const m=result.config.edgeTrim;[[0,0,sheet.length,m],[0,sheet.width-m,sheet.length,m],[0,m,m,sheet.width-2*m],[sheet.length-m,m,m,sheet.width-2*m]].forEach(([x,y,w,h])=>svg.appendChild(svgElement('rect',{x,y,width:w,height:h,class:'trim-area'})));}
     sheet.placements.forEach(placement=>{
       const group=svgElement('g'),rect=svgElement('rect',{x:placement.x,y:placement.y,width:placement.w,height:placement.h,fill:palette[placement.colorIndex%palette.length],class:'piece'}),title=svgElement('title');title.textContent=`${placement.id} · ${formatLengthValue(placement.length)} × ${formatLengthValue(placement.width)} ${displayUnit}${placement.rotated?` · ${t('rotated')}`:''}`;rect.appendChild(title);group.appendChild(rect);
@@ -244,6 +284,7 @@
       const x2=cut.orientation==='vertical'?cut.x:cut.x+cut.length,y2=cut.orientation==='vertical'?cut.y+cut.length:cut.y,line=svgElement('line',{x1:cut.x,y1:cut.y,x2,y2,class:'cut-line'});svg.appendChild(line);
       const cx=cut.orientation==='vertical'?cut.x:cut.x+cut.length/2,cy=cut.orientation==='vertical'?cut.y+cut.length/2:cut.y,circle=svgElement('circle',{cx,cy,r:radius,class:'cut-number'}),label=svgElement('text',{x:cx,y:cy,'font-size':radius*1.05,class:'cut-number-text'});label.textContent=cut.order;svg.append(circle,label);
     });
+    renderSheetDimensions(svg,dimensions);
     const legend=document.createElement('div');legend.className='layout-legend';const unique=new Map();sheet.placements.forEach(p=>{if(!unique.has(p.id))unique.set(p.id,p);});legend.innerHTML=[...unique.values()].map(p=>`<span><i style="background:${palette[p.colorIndex%palette.length]}"></i>${escapeHtml(p.id)} · ${formatLengthValue(p.length)} × ${formatLengthValue(p.width)} ${displayUnit}</span>`).join('');
     item.append(heading,svg,legend);return item;
   }

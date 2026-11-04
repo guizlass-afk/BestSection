@@ -60,6 +60,13 @@
         doc.getElementById('optimizeButton').click();for(let retry=0;retry<100&&doc.getElementById('resultContent').hidden;retry++)await wait(50);
         if(doc.getElementById('resultContent').hidden||doc.getElementById('metricPieces').textContent!=='4'||!doc.querySelector('.sheet-svg')||!doc.querySelector('#cutsTableBody tr'))throw new Error('Fluxo visual não gerou o plano');
         if(!doc.getElementById('progressPanel').hidden&&doc.getElementById('progressPercent').textContent!=='100%')throw new Error('Barra de progresso não concluiu');
+        const dimensions=[...doc.querySelectorAll('.sheet-svg .sheet-dimension')];
+        if(!dimensions.length||!dimensions.some(g=>g.dataset.axis==='x'&&g.textContent==='600')||!dimensions.some(g=>g.dataset.axis==='y'&&g.textContent==='400'))throw new Error('Cotas das pecas ausentes ou incorretas');
+        for(const label of doc.querySelectorAll('.sheet-dimension text')){
+          const svg=label.ownerSVGElement,box=label.getBoundingClientRect(),bounds=svg.getBoundingClientRect();
+          if(box.left<bounds.left-1||box.top<bounds.top-1||box.right>bounds.right+1||box.bottom>bounds.bottom+1)throw new Error('Cota fora do SVG');
+        }
+        log.push('Cotas externas das pecas: OK');
         languageSelect.value='en-US';languageSelect.dispatchEvent(new win.Event('change'));if(doc.querySelector('[data-i18n="sheetMaps"]').textContent!=='Sheet maps'||!doc.querySelector('.layout-heading strong').textContent.includes('SHEET'))throw new Error('Resultado dinâmico não foi traduzido');
         languageSelect.value='pt-BR';languageSelect.dispatchEvent(new win.Event('change'));
         win.XLSX.writeFile=originalWriteFile;
