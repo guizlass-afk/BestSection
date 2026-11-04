@@ -23,6 +23,32 @@
     write(`trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
     return new Blob(chunks,{type:'application/pdf'});
   }
+  function listPages({title,project,details,headers,rows,totalSheets}) {
+    const width=595.28,height=841.89,scale=300/72,margin=28,rowHeight=26,perPage=24;
+    const count=Math.max(1,Math.ceil(rows.length/perPage)),pages=[];
+    for(let page=0;page<count;page++) {
+      const canvas=document.createElement('canvas');canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
+      const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
+      const available=width-margin*2,columns=[0,.34,.58,.82,1].map(n=>margin+n*available);
+      ctx.fillStyle='#1c333f';ctx.font='bold 18px Arial';ctx.fillText(title,margin,46,available);
+      ctx.font='11px Arial';ctx.fillText(project,margin,66,available);ctx.fillText(details,margin,84,available);
+      const drawRow=(values,y,header)=>{
+        ctx.fillStyle=header?'#e7eff1':'#fff';ctx.fillRect(margin,y,available,rowHeight);
+        ctx.strokeStyle='#cbd8dc';ctx.lineWidth=.5;ctx.strokeRect(margin,y,available,rowHeight);
+        values.forEach((value,col)=>{
+          ctx.fillStyle='#1c333f';ctx.font=`${header?'bold ':''}11px Arial`;ctx.textAlign=col?'right':'left';
+          ctx.fillText(String(value),col?columns[col+1]-10:columns[col]+10,y+17,columns[col+1]-columns[col]-20);
+        });
+      };
+      drawRow(headers,104,true);
+      rows.slice(page*perPage,(page+1)*perPage).forEach((row,i)=>drawRow(row,130+i*rowHeight,false));
+      ctx.fillStyle='#526770';ctx.font='9px Arial';ctx.textAlign='left';ctx.fillText('BestSection',margin,height-16);
+      ctx.textAlign='right';ctx.fillText(`${page+1} / ${count+totalSheets}`,width-margin,height-16);
+      const jpeg=Uint8Array.from(atob(canvas.toDataURL('image/jpeg',.97).split(',')[1]),c=>c.charCodeAt(0));
+      pages.push({width,height,pixelsW:canvas.width,pixelsH:canvas.height,jpeg});
+    }
+    return pages;
+  }
   async function sheetPage(svg,{title,project,details,legend,index,total}) {
     const landscape=svg.viewBox.baseVal.width>=svg.viewBox.baseVal.height;
     const width=landscape?841.89:595.28,height=landscape?595.28:841.89,scale=300/72;
@@ -58,5 +84,5 @@
     const jpeg=Uint8Array.from(atob(canvas.toDataURL('image/jpeg',.97).split(',')[1]),c=>c.charCodeAt(0));
     return {width,height,pixelsW:canvas.width,pixelsH:canvas.height,jpeg};
   }
-  window.BestSectionPDF=Object.freeze({encode,sheetPage});
+  window.BestSectionPDF=Object.freeze({encode,sheetPage,listPages});
 })();

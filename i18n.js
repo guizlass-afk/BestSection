@@ -25,7 +25,7 @@
   };
 
   const pdfLabels={"pt-BR": "Exportar PDF", "en-US": "Export PDF", "es-ES": "Exportar PDF", "zh-CN": "\u5bfc\u51fa PDF", "hi-IN": "PDF \u0928\u093f\u0930\u094d\u092f\u093e\u0924 \u0915\u0930\u0947\u0902", "ar-SA": "\u062a\u0635\u062f\u064a\u0631 PDF", "fr-FR": "Exporter PDF", "bn-BD": "PDF \u09b0\u09aa\u09cd\u09a4\u09be\u09a8\u09bf", "ru-RU": "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 PDF", "de-DE": "PDF exportieren", "it-IT": "Esporta PDF", "ja-JP": "PDF \u3092\u51fa\u529b"};
-  Object.entries(translations).forEach(([code,values])=>{values.exportPDF=pdfLabels[code];values.pdfError=code==='pt-BR'?'N\u00e3o foi poss\u00edvel gerar o PDF. Tente novamente.':'Could not generate the PDF. Please try again.';});
+  Object.entries(translations).forEach(([code,values])=>{values.cutList=code==='pt-BR'?'Lista de corte':code==='en-US'?'Cut list':values.partList;values.exportPDF=pdfLabels[code];values.pdfError=code==='pt-BR'?'N\u00e3o foi poss\u00edvel gerar o PDF. Tente novamente.':'Could not generate the PDF. Please try again.';});
 
   const meta = {
     'pt-BR':{label:'Português',flag:'br'},'en-US':{label:'English',flag:'us'},'es-ES':{label:'Español',flag:'es'},'zh-CN':{label:'中文',flag:'cn'},'hi-IN':{label:'हिन्दी',flag:'in'},'ar-SA':{label:'العربية',flag:'sa'},'fr-FR':{label:'Français',flag:'fr'},'bn-BD':{label:'বাংলা',flag:'bd'},'ru-RU':{label:'Русский',flag:'ru'},'de-DE':{label:'Deutsch',flag:'de'},'it-IT':{label:'Italiano',flag:'it'},'ja-JP':{label:'日本語',flag:'jp'}

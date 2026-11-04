@@ -89,6 +89,8 @@
         const pdfPage=await win.BestSectionPDF.sheetPage(doc.querySelector('.sheet-svg'),{title:'Chapa de teste',project:'Projeto de teste',details:'600 x 400 mm',legend:[],index:1,total:2});
         const pdf=win.BestSectionPDF.encode([pdfPage,pdfPage]),pdfText=await pdf.text();
         if(pdf.type!=='application/pdf'||!pdfText.startsWith('%PDF-1.4')||!pdfText.includes('/Count 2 ')||pdf.size<1000)throw new Error('PDF multipagina invalido');
+        const listPages=win.BestSectionPDF.listPages({title:'Lista de corte',project:'Teste',details:'mm',headers:['ID','Comp.','Larg.','Qtd.'],rows:Array.from({length:49},(_,i)=>['P'+i,'1440','1220',4]),totalSheets:2});
+        if(listPages.length!==3)throw new Error('Lista de corte longa nao paginou corretamente');
         log.push('Exportacao PDF com uma chapa por pagina: OK');
         log.push('Interface e mapa SVG: OK','Modelo Excel completo: OK','Barra de progresso: OK','Biblioteca local: OK','Alternador métrico/imperial: OK');
         document.getElementById('status').textContent='PASS';

@@ -316,7 +316,14 @@
     ui.pdfButton.disabled=true;
     try {
       await document.fonts.ready;
-      const pages=[];
+      const project=`${result.config.projectName} \u00b7 ${result.config.material} \u00b7 ${formatLength(result.config.thickness)}`;
+      const pages=window.BestSectionPDF.listPages({
+        title:t('cutList'),project,details:`${t('lengthShort')} / ${t('widthShort')}: ${displayUnit}`,
+        headers:[t('identification'),t('lengthShort'),t('widthShort'),t('qtyShort')],
+        rows:result.config.pieces.map(piece=>[piece.id,formatLengthValue(piece.length),formatLengthValue(piece.width),piece.quantity]),
+        totalSheets:result.sheets.length
+      });
+      const listPageCount=pages.length;
       for(let i=0;i<result.sheets.length;i++) {
         const sheet=result.sheets[i],layout=layouts[i];
         pages.push(await window.BestSectionPDF.sheetPage(layout.querySelector('svg'),{
@@ -324,7 +331,7 @@
           project:`${result.config.projectName} \u00b7 ${result.config.material} \u00b7 ${formatLength(result.config.thickness)}`,
           details:`${formatLengthValue(sheet.length)} \u00d7 ${formatLengthValue(sheet.width)} ${displayUnit} \u00b7 ${t('pieceCount',{count:sheet.placements.length})}`,
           legend:[...layout.querySelectorAll('.layout-legend span')].map(entry=>({text:entry.textContent,color:entry.querySelector('i').style.background})),
-          index:i+1,total:result.sheets.length
+          index:listPageCount+i+1,total:listPageCount+result.sheets.length
         }));
       }
       const url=URL.createObjectURL(window.BestSectionPDF.encode(pages)),link=document.createElement('a');
