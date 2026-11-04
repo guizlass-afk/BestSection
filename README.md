@@ -16,7 +16,7 @@ Todo o processamento, inclusive leitura e geração das planilhas, ocorre no nav
 - sequência de cortes executável e lista completa de posições;
 - modelo Excel, importação, salvamento do formulário e exportação do resultado;
 - interface em 12 idiomas, com bandeiras e suporte à leitura da direita para a esquerda em árabe;
-- impressão do plano e barra de progresso durante a otimização.
+- exportação direta em PDF com uma chapa por página e barra de progresso durante a otimização.
 
 ## Como usar
 

@@ -85,6 +85,11 @@
         if(doc.documentElement.dataset.unit!=='mm'||win.localStorage.getItem('bestsection-unit')!=='mm')throw new Error('Alternância de volta para milímetros falhou');
         if(Math.abs(Number(doc.getElementById('materialThickness').value)-thicknessMm)>0.05)throw new Error('Ida e volta mm→in→mm perdeu precisão da espessura');
         if(Math.abs(Number(sheetBody.querySelector('.sheet-length').value)-sheetLengthMm)>0.05)throw new Error('Ida e volta mm→in→mm perdeu precisão do comprimento da chapa');
+        if(doc.getElementById('printButton')||doc.getElementById('pdfButton').textContent!=='Exportar PDF')throw new Error('Botao PDF nao substituiu Imprimir');
+        const pdfPage=await win.BestSectionPDF.sheetPage(doc.querySelector('.sheet-svg'),{title:'Chapa de teste',project:'Projeto de teste',details:'600 x 400 mm',legend:[],index:1,total:2});
+        const pdf=win.BestSectionPDF.encode([pdfPage,pdfPage]),pdfText=await pdf.text();
+        if(pdf.type!=='application/pdf'||!pdfText.startsWith('%PDF-1.4')||!pdfText.includes('/Count 2 ')||pdf.size<1000)throw new Error('PDF multipagina invalido');
+        log.push('Exportacao PDF com uma chapa por pagina: OK');
         log.push('Interface e mapa SVG: OK','Modelo Excel completo: OK','Barra de progresso: OK','Biblioteca local: OK','Alternador métrico/imperial: OK');
         document.getElementById('status').textContent='PASS';
       }catch(error){document.getElementById('status').textContent='FAIL';log.push(error.stack||error.message);}

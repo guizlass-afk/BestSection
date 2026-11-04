@@ -12,7 +12,7 @@
     resultContent:$('resultContent'), resultSubtitle:$('resultSubtitle'),
     metricSheets:$('metricSheets'), metricUsage:$('metricUsage'), metricPieces:$('metricPieces'), metricWaste:$('metricWaste'),
     materialBadge:$('materialBadge'), sheetLayouts:$('sheetLayouts'), cutsTableBody:$('cutsTableBody'), piecesTableBody:$('piecesTableBody'),
-    printButton:$('printButton'), exportButton:$('exportButton')
+    pdfButton:$('pdfButton'), exportButton:$('exportButton')
   };
   const translations=window.BestSectionI18n?.translations||{'pt-BR':{}};
   const languageMeta=window.BestSectionI18n?.meta||{'pt-BR':{label:'Português',flag:'br'}};
@@ -55,7 +55,7 @@
   }
   function invalidateResult() {
     if (!state.result) return;
-    state.result=null; ui.resultContent.hidden=true; ui.printButton.disabled=ui.exportButton.disabled=true;
+    state.result=null; ui.resultContent.hidden=true; ui.pdfButton.disabled=ui.exportButton.disabled=true;
     ui.resultSubtitle.textContent=t('changedData');
   }
   function updateRemoveButtons(selector) {
@@ -229,41 +229,45 @@
     const percent=Math.max(0,Math.min(100,Math.round(value*100))); ui.progressBar.style.width=`${percent}%`;ui.progressPercent.textContent=`${percent}%`;ui.progressTrack.setAttribute('aria-valuenow',String(percent));ui.progressLabel.textContent=t(percent>=100?'progressDone':'progressDoing');if(detail)ui.progressDetail.textContent=detail;
   }
   function svgElement(name,attributes={}) { const element=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attributes).forEach(([key,value])=>element.setAttribute(key,String(value)));return element; }
-  // Project actual piece spans onto the outside of the sheet, merging repeats.
-  // Separate overlapping spans into lanes so dimensions never cover the pieces.
+  // Keep each dimension beside its piece, outside the nearest sheet edge.
   function sheetDimensions(sheet) {
-    const font=Math.max(sheet.length,sheet.width)/75, gap=font*2.4;
-    function axis(start,size,total) {
+    const font=Math.max(sheet.length,sheet.width)/75,gap=font*2.4;
+    function side(start,size,total,cross,crossSize,crossTotal,far) {
       const unique=new Map();
       sheet.placements.forEach(piece=>{
+        const nearestFar=piece[cross]>crossTotal-piece[cross]-piece[crossSize];
+        if(nearestFar!==far)return;
         const a=piece[start],b=a+piece[size];
         if(a<1e-7&&Math.abs(b-total)<1e-7)return;
-        const key=`${a.toFixed(6)}:${b.toFixed(6)}`;
-        unique.set(key,{a,b});
+        unique.set(`${a.toFixed(6)}:${b.toFixed(6)}`,{a,b});
       });
-      const lanes=[];
-      const spans=[...unique.values()].sort((a,b)=>a.a-b.a||a.b-b.b);
+      const lanes=[],spans=[...unique.values()].sort((a,b)=>a.a-b.a||a.b-b.b);
       spans.forEach(span=>{
         const text=formatLengthValue(span.b-span.a),half=Math.max((span.b-span.a)/2,text.length*font*.32)+font*.5;
         const center=(span.a+span.b)/2,lo=center-half,hi=center+half;
-        let lane=lanes.findIndex(end=>end<lo);
-        if(lane<0)lane=lanes.length;
+        let lane=lanes.findIndex(end=>end<lo);if(lane<0)lane=lanes.length;
         lanes[lane]=hi;span.lane=lane;span.text=text;
       });
       return {spans,padding:lanes.length?gap*(lanes.length+1):font};
     }
-    return {font,gap,x:axis('x','w',sheet.length),y:axis('y','h',sheet.width)};
+    return {font,gap,
+      top:side('x','w',sheet.length,'y','h',sheet.width,false),
+      bottom:side('x','w',sheet.length,'y','h',sheet.width,true),
+      left:side('y','h',sheet.width,'x','w',sheet.length,false),
+      right:side('y','h',sheet.width,'x','w',sheet.length,true)};
   }
-  function renderSheetDimensions(svg,dimensions) {
+  function renderSheetDimensions(svg,dimensions,sheet) {
     const {font,gap}=dimensions;
-    for(const [axis,data] of [['x',dimensions.x],['y',dimensions.y]]) {
-      data.spans.forEach(({a,b,lane,text})=>{
-        const offset=-gap*(lane+1),group=svgElement('g',{class:'sheet-dimension','data-axis':axis});
-        const line=(u1,v1,u2,v2)=>group.appendChild(svgElement('line',axis==='x'?{x1:u1,y1:v1,x2:u2,y2:v2}:{x1:v1,y1:u1,x2:v2,y2:u2}));
+    for(const side of ['top','bottom','left','right']) {
+      const horizontal=side==='top'||side==='bottom',far=side==='bottom'||side==='right',sign=far?1:-1;
+      const origin=far?(horizontal?sheet.width:sheet.length):0;
+      dimensions[side].spans.forEach(({a,b,lane,text})=>{
+        const offset=origin+sign*gap*(lane+1),group=svgElement('g',{class:'sheet-dimension','data-axis':horizontal?'x':'y','data-side':side});
+        const line=(u1,v1,u2,v2)=>group.appendChild(svgElement('line',horizontal?{x1:u1,y1:v1,x2:u2,y2:v2}:{x1:v1,y1:u1,x2:v2,y2:u2}));
         line(a,offset,b,offset);
-        for(const end of [a,b]){line(end,-font*.2,end,offset-font*.3);line(end-font*.2,offset+font*.2,end+font*.2,offset-font*.2);}
-        const center=(a+b)/2;
-        const label=svgElement('text',axis==='x'?{x:center,y:offset-font*.35,'font-size':font}:{transform:`translate(${offset-font*.35} ${center}) rotate(-90)`,'font-size':font});
+        for(const end of [a,b]){line(end,origin+sign*font*.2,end,offset+sign*font*.3);line(end-font*.2,offset+font*.2,end+font*.2,offset-font*.2);}
+        const center=(a+b)/2,labelOffset=offset+(far?font: -font*.35);
+        const label=svgElement('text',horizontal?{x:center,y:labelOffset,'font-size':font}:{transform:`translate(${labelOffset} ${center}) rotate(-90)`,'font-size':font});
         label.textContent=text;group.appendChild(label);svg.appendChild(group);
       });
     }
@@ -271,8 +275,8 @@
   function renderSheetLayout(sheet,result) {
     const item=document.createElement('article');item.className='layout-item';
     const heading=document.createElement('div');heading.className='layout-heading';heading.innerHTML=`<strong>${escapeHtml(t('sheetUpper',{number:sheet.index}))} · ${escapeHtml(sheet.stockType.name)}</strong><span>${formatLengthValue(sheet.length)} × ${formatLengthValue(sheet.width)} ${displayUnit}<br>${escapeHtml(t('pieceCount',{count:sheet.placements.length}))} · ${escapeHtml(t('remainderMeasure',{area:formatNumber(sheet.free.reduce((sum,r)=>sum+r.w*r.h,0)/1e6,3)}))}</span>`;
-    const dimensions=sheetDimensions(sheet),left=dimensions.y.padding,top=dimensions.x.padding,pad=dimensions.font;
-    const svg=svgElement('svg',{class:'sheet-svg',viewBox:`${-left} ${-top} ${sheet.length+left+pad} ${sheet.width+top+pad}`,role:'img','aria-label':t('sheetPlanAria',{number:sheet.index})});
+    const dimensions=sheetDimensions(sheet),left=dimensions.left.padding,top=dimensions.top.padding,right=dimensions.right.padding,bottom=dimensions.bottom.padding;
+    const svg=svgElement('svg',{class:'sheet-svg',viewBox:`${-left} ${-top} ${sheet.length+left+right} ${sheet.width+top+bottom}`,role:'img','aria-label':t('sheetPlanAria',{number:sheet.index})});
     svg.appendChild(svgElement('rect',{x:0,y:0,width:sheet.length,height:sheet.width,fill:'#f5f8f9',class:'sheet-outline'}));
     if(result.config.edgeTrim>0){const m=result.config.edgeTrim;[[0,0,sheet.length,m],[0,sheet.width-m,sheet.length,m],[0,m,m,sheet.width-2*m],[sheet.length-m,m,m,sheet.width-2*m]].forEach(([x,y,w,h])=>svg.appendChild(svgElement('rect',{x,y,width:w,height:h,class:'trim-area'})));}
     sheet.placements.forEach(placement=>{
@@ -284,12 +288,12 @@
       const x2=cut.orientation==='vertical'?cut.x:cut.x+cut.length,y2=cut.orientation==='vertical'?cut.y+cut.length:cut.y,line=svgElement('line',{x1:cut.x,y1:cut.y,x2,y2,class:'cut-line'});svg.appendChild(line);
       const cx=cut.orientation==='vertical'?cut.x:cut.x+cut.length/2,cy=cut.orientation==='vertical'?cut.y+cut.length/2:cut.y,circle=svgElement('circle',{cx,cy,r:radius,class:'cut-number'}),label=svgElement('text',{x:cx,y:cy,'font-size':radius*1.05,class:'cut-number-text'});label.textContent=cut.order;svg.append(circle,label);
     });
-    renderSheetDimensions(svg,dimensions);
+    renderSheetDimensions(svg,dimensions,sheet);
     const legend=document.createElement('div');legend.className='layout-legend';const unique=new Map();sheet.placements.forEach(p=>{if(!unique.has(p.id))unique.set(p.id,p);});legend.innerHTML=[...unique.values()].map(p=>`<span><i style="background:${palette[p.colorIndex%palette.length]}"></i>${escapeHtml(p.id)} · ${formatLengthValue(p.length)} × ${formatLengthValue(p.width)} ${displayUnit}</span>`).join('');
     item.append(heading,svg,legend);return item;
   }
   function renderResult(result) {
-    state.result=result;ui.resultContent.hidden=false;ui.printButton.disabled=ui.exportButton.disabled=false;
+    state.result=result;ui.resultContent.hidden=false;ui.pdfButton.disabled=ui.exportButton.disabled=false;
     ui.metricSheets.textContent=result.totalSheets;ui.metricUsage.textContent=`${formatNumber(result.utilization,1)}%`;ui.metricPieces.textContent=result.totalPieces;ui.metricWaste.textContent=`${formatNumber(result.remnantArea/1e6,3)} m²`;
     ui.materialBadge.textContent=`${result.config.material} · ${formatLength(result.config.thickness)}`;ui.resultSubtitle.textContent=t('resultSummary',{parts:result.totalPieces,sheets:result.totalSheets,loss:formatNumber(result.kerfLoss/1e6,3)});
     ui.sheetLayouts.innerHTML='';result.sheets.forEach(sheet=>ui.sheetLayouts.appendChild(renderSheetLayout(sheet,result)));
@@ -306,6 +310,29 @@
   }
 
   function workbookAvailable(){if(window.XLSX)return true;setMessage(t('excelMissing'),'error');return false;}
+  async function exportPDF() {
+    if(!state.result||ui.pdfButton.disabled)return;
+    const result=state.result,layouts=[...ui.sheetLayouts.querySelectorAll('.layout-item')];
+    ui.pdfButton.disabled=true;
+    try {
+      await document.fonts.ready;
+      const pages=[];
+      for(let i=0;i<result.sheets.length;i++) {
+        const sheet=result.sheets[i],layout=layouts[i];
+        pages.push(await window.BestSectionPDF.sheetPage(layout.querySelector('svg'),{
+          title:layout.querySelector('.layout-heading strong').textContent,
+          project:`${result.config.projectName} \u00b7 ${result.config.material} \u00b7 ${formatLength(result.config.thickness)}`,
+          details:`${formatLengthValue(sheet.length)} \u00d7 ${formatLengthValue(sheet.width)} ${displayUnit} \u00b7 ${t('pieceCount',{count:sheet.placements.length})}`,
+          legend:[...layout.querySelectorAll('.layout-legend span')].map(entry=>({text:entry.textContent,color:entry.querySelector('i').style.background})),
+          index:i+1,total:result.sheets.length
+        }));
+      }
+      const url=URL.createObjectURL(window.BestSectionPDF.encode(pages)),link=document.createElement('a');
+      link.href=url;link.download=`${safeFileName(result.config.projectName)}_bestsection.pdf`;document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    } catch(error) {console.error(error);setMessage(t('pdfError'),'error');}
+    finally {ui.pdfButton.disabled=!state.result;}
+  }
   function projectWorkbook(sheetRows,partRows,settingsRows) {
     const sheets=XLSX.utils.aoa_to_sheet([['Identificacao','Comprimento_mm','Largura_mm','Quantidade','Priorizar'],...sheetRows]),parts=XLSX.utils.aoa_to_sheet([['Identificacao','Comprimento_mm','Largura_mm','Quantidade','Observacao'],...partRows]),settings=XLSX.utils.aoa_to_sheet([['Configuracao','Valor'],...settingsRows]),instructions=XLSX.utils.aoa_to_sheet([
       ['BESTSECTION — ARQUIVO COMPLETO DO PROJETO'],['Preencha as abas Chapas e Pecas sem alterar os nomes das colunas.'],['Chapas','Cadastre cada tamanho de chapa disponível. Use Sim em Priorizar para consumir esse tamanho primeiro.'],['Pecas','Informe identificação, comprimento, largura e quantidade. Observacao é opcional.'],['Configuracoes','Nome_projeto, Material, Espessura_material_mm, Largura_corte_mm, Margem_bordas_mm e Permitir_rotacao_90.'],['Importante','Todas as medidas são em milímetros. A otimização gera somente cortes guilhotinados.']
@@ -340,7 +367,7 @@
   ui.languageMenu.addEventListener('click',event=>{const button=event.target.closest('[data-language]');if(!button)return;applyLanguage(button.dataset.language);setLanguageMenu(false);ui.languageButton.focus();});
   ui.languagePicker.addEventListener('keydown',event=>{if(event.key==='Escape'){setLanguageMenu(false);ui.languageButton.focus();return;}if(!['ArrowDown','ArrowUp'].includes(event.key))return;event.preventDefault();const buttons=[...ui.languageMenu.querySelectorAll('[data-language]')],current=Math.max(0,buttons.indexOf(document.activeElement)),next=event.key==='ArrowDown'?(current+1)%buttons.length:(current-1+buttons.length)%buttons.length;setLanguageMenu(true);buttons[next].focus();});
   document.addEventListener('click',event=>{if(!ui.languagePicker.contains(event.target))setLanguageMenu(false);});
-  ui.optimizeButton.addEventListener('click',executeOptimization);ui.templateButton.addEventListener('click',downloadTemplate);ui.saveProjectButton.addEventListener('click',saveProject);ui.excelInput.addEventListener('change',event=>event.target.files[0]&&importExcel(event.target.files[0]));ui.printButton.addEventListener('click',()=>window.print());ui.exportButton.addEventListener('click',exportResult);
+  ui.optimizeButton.addEventListener('click',executeOptimization);ui.templateButton.addEventListener('click',downloadTemplate);ui.saveProjectButton.addEventListener('click',saveProject);ui.excelInput.addEventListener('change',event=>event.target.files[0]&&importExcel(event.target.files[0]));ui.pdfButton.addEventListener('click',exportPDF);ui.exportButton.addEventListener('click',exportResult);
 
   function convertDisplayedLengthInputs(prevUnit,nextUnit) {
     if (prevUnit===nextUnit) return;
